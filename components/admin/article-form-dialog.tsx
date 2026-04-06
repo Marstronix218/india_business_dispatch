@@ -4,6 +4,7 @@ import { useState, useEffect } from "react"
 import {
   Dialog,
   DialogContent,
+  DialogDescription,
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog"
@@ -115,6 +116,11 @@ export function ArticleFormDialog({
           <DialogTitle className="text-foreground">
             {isEditing ? "記事を編集" : "新規記事を作成"}
           </DialogTitle>
+          <DialogDescription>
+            {isEditing
+              ? "記事の内容を編集して更新してください。"
+              : "新しい記事の情報を入力して公開してください。"}
+          </DialogDescription>
         </DialogHeader>
 
         <form onSubmit={handleSubmit} className="flex flex-col gap-5 mt-2">

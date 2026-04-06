@@ -9,14 +9,16 @@ import {
   CategoryWidget,
   AboutWidget,
 } from "@/components/sidebar-widgets"
-import { NEWS_ARTICLES, type Category } from "@/lib/news-data"
+import { type Category } from "@/lib/news-data"
+import { useArticles } from "@/lib/article-store"
 
 export function NewsList() {
   const [activeCategory, setActiveCategory] = useState<Category | null>(null)
   const [searchQuery, setSearchQuery] = useState("")
+  const allArticles = useArticles()
 
   const filteredArticles = useMemo(() => {
-    let articles = NEWS_ARTICLES
+    let articles = allArticles
 
     if (activeCategory) {
       articles = articles.filter((a) => a.category === activeCategory)

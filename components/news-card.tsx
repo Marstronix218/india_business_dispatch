@@ -53,10 +53,23 @@ export function NewsCardFeatured({ article }: { article: NewsArticle }) {
           </div>
         )}
         <div className="mt-3 flex items-center text-xs text-muted-foreground">
-          <span>
-            {"出典: "}
-            {article.source}
-          </span>
+          {article.sourceUrl ? (
+            <a
+              href={article.sourceUrl}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="hover:text-foreground transition-colors underline-offset-2 hover:underline"
+              onClick={(e) => e.stopPropagation()}
+            >
+              {"出典: "}
+              {article.source}
+            </a>
+          ) : (
+            <span>
+              {"出典: "}
+              {article.source}
+            </span>
+          )}
           <ArrowRight className="size-3 ml-auto opacity-0 group-hover:opacity-100 transition-opacity" />
         </div>
       </div>

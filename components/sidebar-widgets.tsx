@@ -1,10 +1,14 @@
+"use client"
+
 import Link from "next/link"
 import { Separator } from "@/components/ui/separator"
 import { TrendingUp, Bookmark } from "lucide-react"
-import { NEWS_ARTICLES, CATEGORY_LABELS } from "@/lib/news-data"
+import { CATEGORY_LABELS } from "@/lib/news-data"
+import { useArticles } from "@/lib/article-store"
 
 export function TrendingWidget() {
-  const trending = NEWS_ARTICLES.filter((a) => a.category !== "column").slice(
+  const allArticles = useArticles()
+  const trending = allArticles.filter((a) => a.category !== "column").slice(
     0,
     5
   )
@@ -38,7 +42,8 @@ export function TrendingWidget() {
 }
 
 export function CategoryWidget() {
-  const categoryCounts = NEWS_ARTICLES.reduce(
+  const allArticles = useArticles()
+  const categoryCounts = allArticles.reduce(
     (acc, article) => {
       acc[article.category] = (acc[article.category] || 0) + 1
       return acc

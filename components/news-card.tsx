@@ -54,16 +54,18 @@ export function NewsCardFeatured({ article }: { article: NewsArticle }) {
         )}
         <div className="mt-3 flex items-center text-xs text-muted-foreground">
           {article.sourceUrl ? (
-            <a
-              href={article.sourceUrl}
-              target="_blank"
-              rel="noopener noreferrer"
-              className="hover:text-foreground transition-colors underline-offset-2 hover:underline"
-              onClick={(e) => e.stopPropagation()}
+            <button
+              type="button"
+              className="hover:text-foreground transition-colors underline-offset-2 hover:underline cursor-pointer"
+              onClick={(e) => {
+                e.preventDefault()
+                e.stopPropagation()
+                window.open(article.sourceUrl, "_blank", "noopener,noreferrer")
+              }}
             >
               {"出典: "}
               {article.source}
-            </a>
+            </button>
           ) : (
             <span>
               {"出典: "}

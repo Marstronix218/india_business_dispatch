@@ -14,6 +14,7 @@ const NAV_CATEGORIES: Category[] = [
   "corporate",
   "startup",
   "social",
+  "culture",
   "column",
 ]
 

@@ -1,6 +1,7 @@
 "use client"
 
 import Link from "next/link"
+import Image from "next/image"
 import { ArrowLeft, Clock, ExternalLink, Share2 } from "lucide-react"
 import { Badge } from "@/components/ui/badge"
 import { Separator } from "@/components/ui/separator"
@@ -112,6 +113,20 @@ export function ArticleView({ id }: { id: string }) {
           </div>
 
           <Separator className="mb-8" />
+
+          {/* Hero image */}
+          {article.imageUrl && (
+            <div className="relative w-full aspect-[16/9] overflow-hidden rounded-lg mb-8 bg-muted">
+              <Image
+                src={article.imageUrl}
+                alt={article.title}
+                fill
+                className="object-cover"
+                sizes="(max-width: 768px) 100vw, 896px"
+                priority
+              />
+            </div>
+          )}
 
           {/* Article body */}
           <div className="prose-custom">

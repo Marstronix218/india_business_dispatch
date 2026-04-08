@@ -42,6 +42,7 @@ const EMPTY_FORM = {
   date: new Date().toISOString().slice(0, 10),
   source: "",
   sourceUrl: "",
+  imageUrl: "",
   body: "",
   interpretation: "",
   isBreaking: false,
@@ -68,6 +69,7 @@ export function ArticleFormDialog({
           date: article.date,
           source: article.source,
           sourceUrl: article.sourceUrl || "",
+          imageUrl: article.imageUrl || "",
           body: article.body,
           interpretation: article.interpretation || "",
           isBreaking: article.isBreaking || false,
@@ -93,6 +95,7 @@ export function ArticleFormDialog({
       updateArticle(editingId, {
         ...form,
         sourceUrl: form.sourceUrl || undefined,
+        imageUrl: form.imageUrl || undefined,
         interpretation: form.interpretation || undefined,
       })
       toast.success("記事を更新しました")
@@ -101,6 +104,7 @@ export function ArticleFormDialog({
         ...form,
         id: getNextId(),
         sourceUrl: form.sourceUrl || undefined,
+        imageUrl: form.imageUrl || undefined,
         interpretation: form.interpretation || undefined,
       })
       toast.success("記事を作成しました")
@@ -207,6 +211,21 @@ export function ArticleFormDialog({
                 placeholder="https://..."
               />
             </div>
+          </div>
+
+          {/* Image URL */}
+          <div className="flex flex-col gap-1.5">
+            <Label htmlFor="imageUrl">{"画像URL"}</Label>
+            <Input
+              id="imageUrl"
+              type="url"
+              value={form.imageUrl}
+              onChange={(e) => setForm({ ...form, imageUrl: e.target.value })}
+              placeholder="/images/article-1.jpg または https://..."
+            />
+            <p className="text-xs text-muted-foreground">
+              {"記事のサムネイル画像URLを入力してください（任意）"}
+            </p>
           </div>
 
           {/* Body */}

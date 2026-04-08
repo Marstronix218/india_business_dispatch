@@ -1,4 +1,5 @@
 import Link from "next/link"
+import Image from "next/image"
 import { Badge } from "@/components/ui/badge"
 import {
   CATEGORY_LABELS,
@@ -18,6 +19,17 @@ export function NewsCardFeatured({ article }: { article: NewsArticle }) {
       href={`/article/${article.id}`}
       className="group block bg-card rounded-lg border border-border overflow-hidden hover:shadow-md transition-shadow"
     >
+      {article.imageUrl && (
+        <div className="relative w-full aspect-[16/9] overflow-hidden bg-muted">
+          <Image
+            src={article.imageUrl}
+            alt={article.title}
+            fill
+            className="object-cover group-hover:scale-105 transition-transform duration-300"
+            sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 33vw"
+          />
+        </div>
+      )}
       <div className="p-5 md:p-6">
         <div className="flex items-center gap-2 mb-3">
           {article.isBreaking && (
@@ -85,6 +97,17 @@ export function NewsCardCompact({ article }: { article: NewsArticle }) {
       href={`/article/${article.id}`}
       className="group flex gap-4 py-4 border-b border-border last:border-none hover:bg-secondary/30 transition-colors -mx-2 px-2 rounded"
     >
+      {article.imageUrl && (
+        <div className="relative w-24 h-24 shrink-0 overflow-hidden rounded bg-muted">
+          <Image
+            src={article.imageUrl}
+            alt={article.title}
+            fill
+            className="object-cover group-hover:scale-105 transition-transform duration-300"
+            sizes="96px"
+          />
+        </div>
+      )}
       <div className="flex-1 min-w-0">
         <div className="flex items-center gap-2 mb-1.5">
           <Badge

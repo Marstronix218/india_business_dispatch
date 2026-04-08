@@ -33,6 +33,11 @@ export function NewsList() {
       )
     }
 
+    // ソート：新しい日付から古い日付順
+    articles = articles.sort((a, b) => {
+      return new Date(b.date).getTime() - new Date(a.date).getTime()
+    })
+
     return articles
   }, [activeCategory, searchQuery])
 

@@ -2,7 +2,6 @@
 
 import Link from "next/link"
 import Image from "next/image"
-import { useState, useEffect } from "react"
 import { ArrowLeft, Clock, ExternalLink, Share2 } from "lucide-react"
 import { Badge } from "@/components/ui/badge"
 import { Separator } from "@/components/ui/separator"
@@ -14,24 +13,6 @@ import { useArticles } from "@/lib/article-store"
 function formatDateFull(dateStr: string) {
   const d = new Date(dateStr)
   return `${d.getFullYear()}年${d.getMonth() + 1}月${d.getDate()}日`
-}
-
-// 本文から見出しを抽出（記事本文の行を見出しとして使用）
-function extractHeadings(body: string) {
-  const paragraphs = body.split("\n\n").filter((p) => p.trim().length > 0)
-  const headings: { id: string; text: string; level: number }[] = []
-
-  paragraphs.forEach((para, index) => {
-    if (para.length > 20 && para.length < 100 && !para.includes("。")) {
-      headings.push({
-        id: `heading-${index}`,
-        text: para.slice(0, 40),
-        level: 1,
-      })
-    }
-  })
-
-  return headings.slice(0, 5)
 }
 
 export function ArticleView({ id }: { id: string }) {

@@ -53,10 +53,10 @@ export function NewsList() {
       />
 
       <main className="flex-1">
-        <div className="mx-auto max-w-6xl px-4 py-6">
+        <div className="mx-auto max-w-6xl px-4 py-3">
           {/* Results info */}
           {(activeCategory || searchQuery) && (
-            <div className="mb-4 flex items-center gap-2">
+            <div className="mb-3 flex items-center gap-2">
               <p className="text-sm text-muted-foreground">
                 {filteredArticles.length}
                 {"件の記事"}
@@ -80,7 +80,7 @@ export function NewsList() {
             </div>
           )}
 
-          <div className="flex flex-col gap-6 md:flex-row">
+          <div className="flex flex-col gap-4 md:flex-row">
             {/* Main column */}
             <div className="flex-1 min-w-0">
               {filteredArticles.length === 0 ? (
@@ -91,17 +91,17 @@ export function NewsList() {
                 </div>
               ) : (
                 <>
-                  {/* Featured article */}
+                  {/* Featured article - smaller */}
                   {featuredArticle && (
-                    <div className="mb-6">
+                    <div className="mb-4">
                       <NewsCardFeatured article={featuredArticle} />
                     </div>
                   )}
 
-                  {/* Rest of articles */}
+                  {/* Rest of articles - tight spacing */}
                   {restArticles.length > 0 && (
-                    <div className="bg-card rounded-lg border border-border p-4 md:p-5">
-                      <h2 className="text-sm font-bold text-foreground mb-3">
+                    <div className="bg-card rounded-lg border border-border p-3">
+                      <h2 className="text-xs font-bold text-foreground mb-2 uppercase tracking-wide opacity-70">
                         {"最新ニュース"}
                       </h2>
                       {restArticles.map((article) => (
@@ -116,11 +116,11 @@ export function NewsList() {
               )}
             </div>
 
-            {/* Sidebar */}
-            <aside className="w-full md:w-72 shrink-0 flex flex-col gap-4">
-              <AboutWidget />
+            {/* Sidebar - reordered and less prominent */}
+            <aside className="w-full md:w-64 shrink-0 flex flex-col gap-3 order-last md:order-none">
               <TrendingWidget />
               <CategoryWidget />
+              <AboutWidget />
             </aside>
           </div>
         </div>

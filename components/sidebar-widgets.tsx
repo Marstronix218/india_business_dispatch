@@ -14,20 +14,20 @@ export function TrendingWidget() {
   )
 
   return (
-    <div className="bg-card rounded-lg border border-border p-4">
-      <h3 className="text-sm font-bold text-foreground flex items-center gap-2 mb-3">
-        <TrendingUp className="size-4 text-accent" />
-        {"注目のニュース"}
+    <div className="bg-card rounded-lg border border-border p-3">
+      <h3 className="text-xs font-bold text-foreground flex items-center gap-2 mb-2 uppercase tracking-wide opacity-70">
+        <TrendingUp className="size-3" />
+        {"注目"}
       </h3>
-      <Separator className="mb-3" />
-      <ul className="flex flex-col gap-3">
+      <Separator className="mb-2" />
+      <ul className="flex flex-col gap-2">
         {trending.map((article, index) => (
           <li key={article.id}>
             <Link
               href={`/article/${article.id}`}
-              className="group flex gap-3 items-start"
+              className="group flex gap-2 items-start"
             >
-              <span className="text-lg font-bold text-muted-foreground/40 leading-none shrink-0 w-6 text-right">
+              <span className="text-xs font-bold text-muted-foreground/40 leading-none shrink-0 w-4 text-right">
                 {index + 1}
               </span>
               <span className="text-xs font-medium text-foreground leading-snug group-hover:text-primary transition-colors line-clamp-2">
@@ -52,13 +52,13 @@ export function CategoryWidget() {
   )
 
   return (
-    <div className="bg-card rounded-lg border border-border p-4">
-      <h3 className="text-sm font-bold text-foreground flex items-center gap-2 mb-3">
-        <Bookmark className="size-4 text-accent" />
-        {"カテゴリ別記事数"}
+    <div className="bg-card rounded-lg border border-border p-3">
+      <h3 className="text-xs font-bold text-foreground flex items-center gap-2 mb-2 uppercase tracking-wide opacity-70">
+        <Bookmark className="size-3" />
+        {"カテゴリ"}
       </h3>
-      <Separator className="mb-3" />
-      <ul className="flex flex-col gap-2">
+      <Separator className="mb-2" />
+      <ul className="flex flex-col gap-1.5">
         {Object.entries(categoryCounts).map(([cat, count]) => (
           <li
             key={cat}
@@ -69,7 +69,6 @@ export function CategoryWidget() {
             </span>
             <span className="text-foreground font-medium">
               {count}
-              {"件"}
             </span>
           </li>
         ))}
@@ -80,12 +79,9 @@ export function CategoryWidget() {
 
 export function AboutWidget() {
   return (
-    <div className="bg-primary text-primary-foreground rounded-lg p-4">
-      <h3 className="text-sm font-bold mb-2">
-        {"India Business Dispatch とは"}
-      </h3>
-      <p className="text-xs leading-relaxed opacity-90">
-        {"日本企業のためのインドビジネス情報プラットフォーム。経済・政策・規制・企業動向を毎日配信し、意思決定に必要な情報を一元化しています。"}
+    <div className="bg-secondary rounded-lg p-2.5 border border-border/50">
+      <p className="text-xs leading-relaxed text-secondary-foreground opacity-80">
+        {"India Business Dispatch: 日本企業向けインドビジネス情報プラットフォーム"}
       </p>
     </div>
   )

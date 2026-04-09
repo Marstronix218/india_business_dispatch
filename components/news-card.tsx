@@ -17,54 +17,49 @@ export function NewsCardFeatured({ article }: { article: NewsArticle }) {
   return (
     <Link
       href={`/article/${article.id}`}
-      className="group block bg-card rounded-lg border border-border overflow-hidden hover:shadow-md transition-shadow"
+      className="group flex gap-4 bg-card rounded-lg border border-border overflow-hidden hover:shadow-md transition-shadow mb-4"
     >
+      {/* Image on left */}
       {article.imageUrl && (
-        <div className="relative w-full aspect-[20/9] overflow-hidden bg-muted">
+        <div className="relative w-40 h-32 shrink-0 overflow-hidden bg-muted">
           <Image
             src={article.imageUrl}
             alt={article.title}
             fill
+            loading="eager"
             className="object-cover group-hover:scale-105 transition-transform duration-300"
-            sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 33vw"
+            sizes="160px"
           />
         </div>
       )}
-      <div className="p-3 md:p-4">
-        <div className="flex items-center gap-2 mb-2">
-          {article.isBreaking && (
-            <Badge className="bg-accent text-accent-foreground text-[10px] uppercase tracking-wider">
-              速報
+      {/* Text on right */}
+      <div className="flex-1 p-3 flex flex-col justify-between">
+        <div>
+          <div className="flex items-center gap-2 mb-1.5">
+            {article.isBreaking && (
+              <Badge className="bg-accent text-accent-foreground text-[10px] uppercase tracking-wider">
+                速報
+              </Badge>
+            )}
+            <Badge
+              variant="outline"
+              className={`text-[10px] ${CATEGORY_COLORS[article.category]} border-none`}
+            >
+              {CATEGORY_LABELS[article.category]}
             </Badge>
-          )}
-          <Badge
-            variant="outline"
-            className={`text-[10px] ${CATEGORY_COLORS[article.category]} border-none`}
-          >
-            {CATEGORY_LABELS[article.category]}
-          </Badge>
-          <span className="text-xs text-muted-foreground flex items-center gap-1">
-            <Clock className="size-3" />
-            {formatDate(article.date)}
-          </span>
-        </div>
-        <h2 className="text-base font-bold text-foreground leading-snug mb-1.5 group-hover:text-primary transition-colors md:text-lg text-balance">
-          {article.title}
-        </h2>
-        <p className="text-sm text-muted-foreground leading-relaxed mb-2 line-clamp-2">
-          {article.summary}
-        </p>
-        {article.interpretation && (
-          <div className="bg-secondary rounded-md px-3 py-2 border-l-2 border-accent">
-            <p className="text-xs font-medium text-secondary-foreground mb-0.5">
-              {"日本企業への示唆"}
-            </p>
-            <p className="text-xs text-muted-foreground leading-relaxed line-clamp-1">
-              {article.interpretation}
-            </p>
+            <span className="text-xs text-muted-foreground flex items-center gap-1">
+              <Clock className="size-3" />
+              {formatDate(article.date)}
+            </span>
           </div>
-        )}
-        <div className="mt-2 flex items-center text-xs text-muted-foreground">
+          <h2 className="text-base font-bold text-foreground leading-snug mb-1 group-hover:text-primary transition-colors line-clamp-3">
+            {article.title}
+          </h2>
+          <p className="text-sm text-muted-foreground leading-relaxed line-clamp-2">
+            {article.summary}
+          </p>
+        </div>
+        <div className="mt-1 flex items-center text-xs text-muted-foreground">
           {article.sourceUrl ? (
             <button
               type="button"
@@ -84,7 +79,51 @@ export function NewsCardFeatured({ article }: { article: NewsArticle }) {
               {article.source}
             </span>
           )}
-          <ArrowRight className="size-3 ml-auto opacity-0 group-hover:opacity-100 transition-opacity" />
+        </div>
+      </div>
+    </Link>
+  )
+}
+
+// New horizontal grid card
+export function NewsCardGridItem({ article }: { article: NewsArticle }) {
+  return (
+    <Link
+      href={`/article/${article.id}`}
+      className="group flex gap-3 bg-card rounded-lg border border-border overflow-hidden hover:shadow-md transition-shadow"
+    >
+      {/* Image on left */}
+      {article.imageUrl && (
+        <div className="relative w-28 h-28 shrink-0 overflow-hidden bg-muted">
+          <Image
+            src={article.imageUrl}
+            alt={article.title}
+            fill
+            className="object-cover group-hover:scale-105 transition-transform duration-300"
+            sizes="112px"
+          />
+        </div>
+      )}
+      {/* Text on right */}
+      <div className="flex-1 p-2.5 flex flex-col justify-between">
+        <div>
+          <div className="flex items-center gap-1.5 mb-1">
+            <Badge
+              variant="outline"
+              className={`text-[10px] ${CATEGORY_COLORS[article.category]} border-none`}
+            >
+              {CATEGORY_LABELS[article.category]}
+            </Badge>
+            <span className="text-xs text-muted-foreground">
+              {formatDate(article.date)}
+            </span>
+          </div>
+          <h3 className="text-sm font-bold text-foreground leading-snug mb-0.5 group-hover:text-primary transition-colors line-clamp-3">
+            {article.title}
+          </h3>
+          <p className="text-xs text-muted-foreground leading-tight line-clamp-2">
+            {article.summary}
+          </p>
         </div>
       </div>
     </Link>

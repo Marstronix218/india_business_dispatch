@@ -14,20 +14,20 @@ export function TrendingWidget() {
   )
 
   return (
-    <div className="bg-card rounded-lg border border-border p-3">
-      <h3 className="text-xs font-bold text-foreground flex items-center gap-2 mb-2 uppercase tracking-wide opacity-70">
-        <TrendingUp className="size-3" />
-        {"注目"}
+    <div className="bg-card rounded-lg border border-border p-4">
+      <h3 className="text-sm font-bold text-foreground flex items-center gap-2 mb-3">
+        <TrendingUp className="size-4 text-accent" />
+        {"アクセスランキング"}
       </h3>
-      <Separator className="mb-2" />
-      <ul className="flex flex-col gap-2">
+      <Separator className="mb-3" />
+      <ul className="flex flex-col gap-3">
         {trending.map((article, index) => (
           <li key={article.id}>
             <Link
               href={`/article/${article.id}`}
-              className="group flex gap-2 items-start"
+              className="group flex gap-3 items-start"
             >
-              <span className="text-xs font-bold text-muted-foreground/40 leading-none shrink-0 w-4 text-right">
+              <span className="text-lg font-bold text-muted-foreground/40 leading-none shrink-0 w-6 text-right">
                 {index + 1}
               </span>
               <span className="text-xs font-medium text-foreground leading-snug group-hover:text-primary transition-colors line-clamp-2">

@@ -113,6 +113,7 @@ export function NewsList() {
             </aside>
           </div>
         </div>
+        </div>
       </main>
 
       <SiteFooter />

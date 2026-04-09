@@ -17,7 +17,7 @@ export function TrendingWidget() {
     <div className="bg-card rounded-lg border border-border p-4">
       <h3 className="text-sm font-bold text-foreground flex items-center gap-2 mb-3">
         <TrendingUp className="size-4 text-accent" />
-        {"注目のニュース"}
+        {"アクセスランキング"}
       </h3>
       <Separator className="mb-3" />
       <ul className="flex flex-col gap-3">
@@ -52,13 +52,13 @@ export function CategoryWidget() {
   )
 
   return (
-    <div className="bg-card rounded-lg border border-border p-4">
-      <h3 className="text-sm font-bold text-foreground flex items-center gap-2 mb-3">
-        <Bookmark className="size-4 text-accent" />
-        {"カテゴリ別記事数"}
+    <div className="bg-card rounded-lg border border-border p-3">
+      <h3 className="text-xs font-bold text-foreground flex items-center gap-2 mb-2 uppercase tracking-wide opacity-70">
+        <Bookmark className="size-3" />
+        {"カテゴリ"}
       </h3>
-      <Separator className="mb-3" />
-      <ul className="flex flex-col gap-2">
+      <Separator className="mb-2" />
+      <ul className="flex flex-col gap-1.5">
         {Object.entries(categoryCounts).map(([cat, count]) => (
           <li
             key={cat}
@@ -69,7 +69,6 @@ export function CategoryWidget() {
             </span>
             <span className="text-foreground font-medium">
               {count}
-              {"件"}
             </span>
           </li>
         ))}
@@ -80,12 +79,9 @@ export function CategoryWidget() {
 
 export function AboutWidget() {
   return (
-    <div className="bg-primary text-primary-foreground rounded-lg p-4">
-      <h3 className="text-sm font-bold mb-2">
-        {"India Business Dispatch とは"}
-      </h3>
-      <p className="text-xs leading-relaxed opacity-90">
-        {"日本企業のためのインドビジネス情報プラットフォーム。経済・政策・規制・企業動向を毎日配信し、意思決定に必要な情報を一元化しています。"}
+    <div className="bg-secondary rounded-lg p-2.5 border border-border/50">
+      <p className="text-xs leading-relaxed text-secondary-foreground opacity-80">
+        {"India Business Dispatch: 日本企業向けインドビジネス情報プラットフォーム"}
       </p>
     </div>
   )

@@ -3,12 +3,8 @@
 import { useState, useMemo } from "react"
 import { SiteHeader } from "@/components/site-header"
 import { SiteFooter } from "@/components/site-footer"
-import { NewsCardFeatured, NewsCardCompact } from "@/components/news-card"
-import {
-  TrendingWidget,
-  CategoryWidget,
-  AboutWidget,
-} from "@/components/sidebar-widgets"
+import { NewsCardFeatured, NewsCardGridItem } from "@/components/news-card"
+import { TrendingWidget } from "@/components/sidebar-widgets"
 import { type Category } from "@/lib/news-data"
 import { useArticles } from "@/lib/article-store"
 
@@ -53,8 +49,8 @@ export function NewsList() {
       />
 
       <main className="flex-1">
-        <div className="mx-auto max-w-6xl px-4 py-6">
-          {/* Results info */}
+        <div className="w-full px-4 sm:px-6 lg:px-8 py-4">
+          <div className="mx-auto max-w-7xl">
           {(activeCategory || searchQuery) && (
             <div className="mb-4 flex items-center gap-2">
               <p className="text-sm text-muted-foreground">
@@ -81,7 +77,7 @@ export function NewsList() {
           )}
 
           <div className="flex flex-col gap-6 md:flex-row">
-            {/* Main column */}
+            {/* Main column - article list */}
             <div className="flex-1 min-w-0">
               {filteredArticles.length === 0 ? (
                 <div className="py-20 text-center">
@@ -91,21 +87,16 @@ export function NewsList() {
                 </div>
               ) : (
                 <>
-                  {/* Featured article */}
+                  {/* Featured article - horizontal layout */}
                   {featuredArticle && (
-                    <div className="mb-6">
-                      <NewsCardFeatured article={featuredArticle} />
-                    </div>
+                    <NewsCardFeatured article={featuredArticle} />
                   )}
 
-                  {/* Rest of articles */}
+                  {/* Rest of articles - 2-column grid */}
                   {restArticles.length > 0 && (
-                    <div className="bg-card rounded-lg border border-border p-4 md:p-5">
-                      <h2 className="text-sm font-bold text-foreground mb-3">
-                        {"最新ニュース"}
-                      </h2>
+                    <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
                       {restArticles.map((article) => (
-                        <NewsCardCompact
+                        <NewsCardGridItem
                           key={article.id}
                           article={article}
                         />
@@ -116,13 +107,12 @@ export function NewsList() {
               )}
             </div>
 
-            {/* Sidebar */}
-            <aside className="w-full md:w-72 shrink-0 flex flex-col gap-4">
-              <AboutWidget />
+            {/* Sidebar - right column (lighter) */}
+            <aside className="w-full md:w-72 shrink-0 order-last md:order-none">
               <TrendingWidget />
-              <CategoryWidget />
             </aside>
           </div>
+        </div>
         </div>
       </main>
 

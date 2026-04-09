@@ -49,8 +49,8 @@ export function NewsList() {
       />
 
       <main className="flex-1">
-        <div className="mx-auto max-w-6xl px-4 py-4">
-          {/* Results info */}
+        <div className="w-full px-4 sm:px-6 lg:px-8 py-4">
+          <div className="mx-auto max-w-7xl">
           {(activeCategory || searchQuery) && (
             <div className="mb-4 flex items-center gap-2">
               <p className="text-sm text-muted-foreground">
@@ -112,6 +112,7 @@ export function NewsList() {
               <TrendingWidget />
             </aside>
           </div>
+        </div>
         </div>
       </main>
 

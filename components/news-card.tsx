@@ -13,76 +13,6 @@ function formatDate(dateStr: string) {
   return `${d.getMonth() + 1}/${d.getDate()}`
 }
 
-export function NewsCardLeadHorizontal({ article }: { article: NewsArticle }) {
-  return (
-    <Link
-      href={`/article/${article.id}`}
-      className="group flex gap-4 bg-card rounded-lg border border-border overflow-hidden hover:shadow-md transition-shadow mb-6"
-    >
-      {article.imageUrl && (
-        <div className="relative w-48 h-40 shrink-0 overflow-hidden bg-muted">
-          <Image
-            src={article.imageUrl}
-            alt={article.title}
-            fill
-            className="object-cover group-hover:scale-105 transition-transform duration-300"
-            sizes="192px"
-          />
-        </div>
-      )}
-      <div className="flex-1 p-4 flex flex-col justify-between">
-        <div>
-          <div className="flex items-center gap-2 mb-2">
-            {article.isBreaking && (
-              <Badge className="bg-accent text-accent-foreground text-[10px] uppercase tracking-wider">
-                速報
-              </Badge>
-            )}
-            <Badge
-              variant="outline"
-              className={`text-[10px] ${CATEGORY_COLORS[article.category]} border-none`}
-            >
-              {CATEGORY_LABELS[article.category]}
-            </Badge>
-            <span className="text-xs text-muted-foreground flex items-center gap-1">
-              <Clock className="size-3" />
-              {formatDate(article.date)}
-            </span>
-          </div>
-          <h2 className="text-base font-bold text-foreground leading-snug mb-2 group-hover:text-primary transition-colors">
-            {article.title}
-          </h2>
-          <p className="text-sm text-muted-foreground leading-relaxed line-clamp-2">
-            {article.summary}
-          </p>
-        </div>
-        <div className="mt-2 flex items-center text-xs text-muted-foreground">
-          {article.sourceUrl ? (
-            <button
-              type="button"
-              className="hover:text-foreground transition-colors underline-offset-2 hover:underline cursor-pointer"
-              onClick={(e) => {
-                e.preventDefault()
-                e.stopPropagation()
-                window.open(article.sourceUrl, "_blank", "noopener,noreferrer")
-              }}
-            >
-              {"出典: "}
-              {article.source}
-            </button>
-          ) : (
-            <span>
-              {"出典: "}
-              {article.source}
-            </span>
-          )}
-          <ArrowRight className="size-3 ml-auto opacity-0 group-hover:opacity-100 transition-opacity" />
-        </div>
-      </div>
-    </Link>
-  )
-}
-
 export function NewsCardFeatured({ article }: { article: NewsArticle }) {
   return (
     <Link
@@ -165,21 +95,21 @@ export function NewsCardCompact({ article }: { article: NewsArticle }) {
   return (
     <Link
       href={`/article/${article.id}`}
-      className="group block bg-card rounded-lg border border-border overflow-hidden hover:shadow-md transition-shadow h-full"
+      className="group flex gap-3 py-3 border-b border-border last:border-none hover:bg-secondary/30 transition-colors -mx-2 px-2 rounded"
     >
       {article.imageUrl && (
-        <div className="relative w-full aspect-square overflow-hidden bg-muted">
+        <div className="relative w-20 h-20 shrink-0 overflow-hidden rounded bg-muted">
           <Image
             src={article.imageUrl}
             alt={article.title}
             fill
             className="object-cover group-hover:scale-105 transition-transform duration-300"
-            sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 25vw"
+            sizes="80px"
           />
         </div>
       )}
-      <div className="p-3 flex flex-col h-full">
-        <div className="flex items-center gap-2 mb-1.5">
+      <div className="flex-1 min-w-0">
+        <div className="flex items-center gap-2 mb-0.5">
           <Badge
             variant="outline"
             className={`text-[10px] ${CATEGORY_COLORS[article.category]} border-none`}
@@ -190,12 +120,15 @@ export function NewsCardCompact({ article }: { article: NewsArticle }) {
             {formatDate(article.date)}
           </span>
         </div>
-        <h3 className="text-sm font-bold text-foreground leading-snug mb-1 group-hover:text-primary transition-colors line-clamp-3 flex-1">
+        <h3 className="text-sm font-bold text-foreground leading-snug mb-0.5 group-hover:text-primary transition-colors line-clamp-2">
           {article.title}
         </h3>
-        <p className="text-xs text-muted-foreground leading-tight line-clamp-2">
+        <p className="text-xs text-muted-foreground leading-tight line-clamp-1">
           {article.summary}
         </p>
+      </div>
+      <div className="flex items-center shrink-0">
+        <ArrowRight className="size-4 text-muted-foreground opacity-0 group-hover:opacity-100 transition-opacity" />
       </div>
     </Link>
   )

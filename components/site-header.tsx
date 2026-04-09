@@ -42,7 +42,7 @@ export function SiteHeader({
   const dayStr = dayNames[today.getDay()]
 
   return (
-    <header className="bg-card border-b border-border">
+    <header className="sticky top-0 z-50 bg-card border-b border-border">
       {/* Top bar */}
       <div className="border-b border-border">
         <div className="mx-auto max-w-6xl flex items-center justify-between px-4 py-2">

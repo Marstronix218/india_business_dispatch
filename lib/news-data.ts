@@ -1,237 +1,473 @@
 export type Category =
   | "economy"
-  | "policy"
   | "regulation"
-  | "corporate"
-  | "startup"
   | "social"
   | "culture"
+  | "market"
   | "column"
 
-export const CATEGORY_LABELS: Record<Category, string> = {
-  economy: "経済",
-  policy: "政策",
-  regulation: "規制",
-  corporate: "企業動向",
-  startup: "スタートアップ",
-  social: "社会",
-  culture: "文化",
-  column: "コラム",
+export type IndustryTag =
+  | "automotive"
+  | "semiconductor"
+  | "machine_tools"
+  | "food"
+  | "chemicals"
+  | "logistics"
+  | "agriculture"
+  | "steel"
+  | "education"
+  | "entertainment"
+  | "talent"
+
+export type ContentType = "news" | "column" | "interview"
+export type Visibility = "public" | "member"
+export type WorkflowStatus = "published" | "review" | "failed"
+
+export interface MarketMetric {
+  label: string
+  value: string
+  change: string
+  unit: string
+  asOf: string
 }
 
-export const CATEGORY_COLORS: Record<Category, string> = {
-  economy: "bg-primary text-primary-foreground",
-  policy: "bg-accent text-accent-foreground",
-  regulation: "bg-muted-foreground text-primary-foreground",
-  corporate: "bg-primary text-primary-foreground",
-  startup: "bg-accent text-accent-foreground",
-  social: "bg-muted-foreground text-primary-foreground",
-  culture: "bg-accent text-accent-foreground",
-  column: "bg-secondary text-secondary-foreground",
+export interface MarketSnapshot {
+  fx: MarketMetric
+  equities: MarketMetric
+  rates: MarketMetric
+  oil: MarketMetric
 }
 
 export interface NewsArticle {
   id: string
   title: string
   summary: string
-  category: Category
-  date: string
   source: string
   sourceUrl?: string
+  publishedAt: string
+  category: Category
+  industryTags: IndustryTag[]
+  implications: string[]
+  contentType: ContentType
+  visibility: Visibility
+  workflowStatus: WorkflowStatus
   imageUrl?: string
-  body: string
-  interpretation?: string
-  isBreaking?: boolean
+  featured?: boolean
+  marketSnapshot?: MarketSnapshot
+}
+
+export const CATEGORY_LABELS: Record<Category, string> = {
+  economy: "経済",
+  regulation: "規制",
+  social: "社会",
+  culture: "文化",
+  market: "為替・市況",
+  column: "コラム",
+}
+
+export const CATEGORY_DESCRIPTIONS: Record<Category, string> = {
+  economy: "市場拡大、企業投資、産業トレンドを一覧で把握",
+  regulation: "進出・調達・採用に影響する制度変更を整理",
+  social: "消費者行動、教育、人材動向など現場の変化を観測",
+  culture: "商習慣やローカル文脈を日本企業の実務に接続",
+  market: "為替・株式・金利・原油の4指標を日次で確認",
+  column: "編集部・寄稿・インタビューによる一次知見",
+}
+
+export const CATEGORY_COLORS: Record<Category, string> = {
+  economy: "bg-primary text-primary-foreground",
+  regulation: "bg-slate-600 text-white",
+  social: "bg-emerald-700 text-white",
+  culture: "bg-orange-500 text-white",
+  market: "bg-zinc-800 text-white",
+  column: "bg-secondary text-secondary-foreground",
+}
+
+export const CONTENT_TYPE_LABELS: Record<ContentType, string> = {
+  news: "短報",
+  column: "コラム",
+  interview: "インタビュー",
+}
+
+export const VISIBILITY_LABELS: Record<Visibility, string> = {
+  public: "公開",
+  member: "会員",
+}
+
+export const WORKFLOW_STATUS_LABELS: Record<WorkflowStatus, string> = {
+  published: "公開中",
+  review: "要確認",
+  failed: "処理失敗",
+}
+
+export const INDUSTRY_LABELS: Record<IndustryTag, string> = {
+  automotive: "自動車",
+  semiconductor: "半導体",
+  machine_tools: "工作機械",
+  food: "食品",
+  chemicals: "化学品",
+  logistics: "物流",
+  agriculture: "農業",
+  steel: "鉄鋼",
+  education: "教育",
+  entertainment: "エンターテインメント",
+  talent: "人材",
+}
+
+export const INDUSTRY_OPTIONS: IndustryTag[] = [
+  "automotive",
+  "semiconductor",
+  "machine_tools",
+  "food",
+  "chemicals",
+  "logistics",
+  "agriculture",
+  "steel",
+  "education",
+  "entertainment",
+  "talent",
+]
+
+export const CATEGORY_OPTIONS: Category[] = [
+  "economy",
+  "regulation",
+  "social",
+  "culture",
+  "market",
+  "column",
+]
+
+export const CONTENT_TYPE_OPTIONS: ContentType[] = [
+  "news",
+  "column",
+  "interview",
+]
+
+export const VISIBILITY_OPTIONS: Visibility[] = ["public", "member"]
+export const WORKFLOW_STATUS_OPTIONS: WorkflowStatus[] = [
+  "published",
+  "review",
+  "failed",
+]
+
+export const MARKET_METRIC_ORDER: Array<keyof MarketSnapshot> = [
+  "fx",
+  "equities",
+  "rates",
+  "oil",
+]
+
+export const DEFAULT_MARKET_SNAPSHOT: MarketSnapshot = {
+  fx: {
+    label: "為替",
+    value: "₹1 = ¥1.83",
+    change: "+0.7%",
+    unit: "INR/JPY",
+    asOf: "2026-04-16 15:00 IST",
+  },
+  equities: {
+    label: "株式",
+    value: "24,515.4",
+    change: "+0.5%",
+    unit: "Nifty 50",
+    asOf: "2026-04-16 15:00 IST",
+  },
+  rates: {
+    label: "金利",
+    value: "7.03",
+    change: "-0.04pt",
+    unit: "10年国債",
+    asOf: "2026-04-16 15:00 IST",
+  },
+  oil: {
+    label: "原油",
+    value: "82.6",
+    change: "+1.1%",
+    unit: "Brent",
+    asOf: "2026-04-16 15:00 IST",
+  },
+}
+
+const LEGACY_CATEGORY_MAP: Record<string, Category> = {
+  economy: "economy",
+  policy: "regulation",
+  regulation: "regulation",
+  corporate: "economy",
+  startup: "economy",
+  social: "social",
+  culture: "culture",
+  market: "market",
+  column: "column",
+}
+
+export function normalizeLegacyCategory(category: string): Category {
+  return LEGACY_CATEGORY_MAP[category] ?? "economy"
+}
+
+export function formatArticleDate(date: string) {
+  const d = new Date(date)
+  return `${d.getFullYear()}年${d.getMonth() + 1}月${d.getDate()}日`
+}
+
+export function formatArticleShortDate(date: string) {
+  const d = new Date(date)
+  return `${d.getMonth() + 1}/${d.getDate()}`
 }
 
 export const NEWS_ARTICLES: NewsArticle[] = [
   {
     id: "1",
-    title: "インド中央銀行、政策金利を0.25%引き下げ6.0%に",
+    title: "インド政府、半導体パッケージ支援の第2弾を準備",
     summary:
-      "RBIは景気刺激策として政策金利を引き下げ。インフレ率が目標圏内に収まり、成長を優先する姿勢。",
+      "中央政府が半導体の後工程と周辺材料を対象にした追加支援策の詳細を詰めており、州政府側でも設備投資補助や用地優遇の条件見直しが進んでいる。今回の焦点は前工程の大型誘致よりも、組立・検査・封止材・精密部材といった裾野領域をどう厚くするかに移っている点だ。既存の電子機器メーカーやEMSも調達先の現地化を急ぎ始めており、日本企業にとっては装置、治具、検査、保守教育まで含めた周辺提案の余地が大きい。一方で、支援条件は州ごとの差がまだ大きく、電力安定性や人材供給まで含めて立地を比較しないと投資採算がぶれやすい局面に入っている。",
+    source: "Ministry of Electronics & IT",
+    sourceUrl: "https://www.meity.gov.in/",
+    publishedAt: "2026-04-15",
     category: "economy",
-    date: "2026-04-08",
-    source: "RBI公式発表",
-    sourceUrl: "https://www.rbi.org.in/Scripts/BS_PressReleaseDisplay.aspx",
-    imageUrl: "/images/article-1.jpg",
-    body: "インド準備銀行（RBI）は4月の金融政策委員会（MPC）において、レポレートを0.25%引き下げ6.0%とすることを決定した。これは2会合連続の利下げであり、景気減速への対応を鮮明にした形だ。\n\n今回の決定の背景には、GDP成長率の鈍化がある。2025年度第4四半期のGDP成長率は6.2%と、前年同期比で0.5ポイント低下。特に製造業と個人消費の伸びが減速しており、RBIは金融緩和を通じて経済活動の活性化を目指す。\n\nダス総裁は記者会見で「インフレ率は目標範囲内に収まっており、成長支援に軸足を移す余地がある」と述べた。消費者物価指数（CPI）は前年比4.2%と、RBIの目標である4%に近い水準で推移している。",
-    interpretation:
-      "日本企業への影響：現地法人の借入コストが低下する可能性があり、設備投資の検討タイミングとして有利。一方、ルピー安圧力が高まる可能性があり、為替ヘッジ戦略の見直しが必要。",
-    isBreaking: true,
+    industryTags: ["semiconductor", "machine_tools"],
+    implications: [
+      "勝機あり: 後工程装置、検査機、素材周辺の提案余地が大きい。",
+      "注意点: 補助金条件は州ごとの差が大きく、立地比較が必須。",
+      "次アクション: 現地候補州ごとに電力・物流・人材の確保条件を並べて比較する。",
+    ],
+    contentType: "news",
+    visibility: "public",
+    workflowStatus: "published",
+    imageUrl: "/images/article-2.jpg",
+    featured: true,
   },
   {
     id: "2",
-    title: "モディ政権、半導体製造支援に追加500億ドルを投入",
+    title: "港湾混雑の緩和で西部回廊の自動車輸送が改善",
     summary:
-      "「Make in India 2.0」の柱として半導体国産化を加速。TSMCの工場誘致にも注力。日系部品メーカーにとっても商機。",
-    category: "policy",
-    date: "2026-04-06",
-    source: "経済産業省発表",
-    sourceUrl: "https://www.meity.gov.in/",
-    imageUrl: "/images/article-2.jpg",
-    body: "モディ首相は4月5日、半導体製造エコシステムの構築に向けた新たな支援パッケージを発表した。総額500億ドル（約7.5兆円）規模の支援は、2030年までの5年間で段階的に実施される。\n\n支援内容には、製造設備の建設補助金（最大50%）、研究開発税制優遇、人材育成プログラムの拡充が含まれる。特に注目されるのは、TSMCやインテルなど大手チップメーカーの誘致に向けた「特別経済区（SEZ）」の新設だ。\n\nグジャラート州とタミル・ナードゥ州に計3カ所の半導体SEZを設置し、インフラ整備から電力供給まで一貫した支援体制を構築する。",
-    interpretation:
-      "日本企業への影響：半導体関連の部品・素材メーカーにとって、インドでのサプライチェーン参入の好機。特に製造装置、化学素材、検査装置の分野で需要が見込まれる。",
+      "ムンバイ周辺港湾の混雑が足元でやや緩和し、西部工業地帯からの完成車・部品輸送に改善の兆しが出ている。とくにナバシェバ周辺では通関と内陸配送の滞留が縮まり、物流各社は内陸倉庫の再配置やクロスドック機能の増強を急いでいる。日系自動車関連企業では、これまで港湾遅延を前提に厚めに積んでいた在庫を見直し、販売計画に合わせた補充頻度へ戻す動きが出始めた。ただし改善は西部中心で、北部や内陸奥地向けの配送は依然として道路事情の差が大きい。調達と販売の両面で、拠点別のリードタイムを再計測して運用を更新する必要がある。",
+    source: "Logistics Insider API",
+    sourceUrl: "https://www.logisticsinsider.in/10-minutes-to-melt-can-quick-commerce-keep-its-cool/",
+    publishedAt: "2026-04-14",
+    category: "economy",
+    industryTags: ["automotive", "logistics"],
+    implications: [
+      "勝機あり: 部品在庫の現地保有を増やし、短納期案件を取り込みやすい。",
+      "注意点: 港湾改善は地域差があり、北部向け配送はなお不安定。",
+      "次アクション: 調達拠点別にリードタイムを再計測し、配送設計を更新する。",
+    ],
+    contentType: "news",
+    visibility: "public",
+    workflowStatus: "published",
+    imageUrl: "/images/article-10.jpg",
   },
   {
     id: "3",
-    title: "外国直接投資規制の改正案、小売・eコマース分野で緩和へ",
+    title: "就労ビザ申請で技能証明の添付要件が厳格化",
     summary:
-      "DPIIT（産業政策・促進局）が新ガイドラインを発表。マルチブランド小売のFDI上限を74%に引き上げ。",
+      "外国人専門職の就労ビザ申請で、学歴証明に加えて職務実績の詳細説明やプロジェクト履歴の添付を求めるケースが増えている。とくに製造、IT、専門サービス分野では、肩書きだけではなく何を担当し、どのような技能を現地で発揮するのかを具体的に示すことが求められている。結果として、採用内定後に書類補完が発生し、着任までのリードタイムが想定より伸びる企業が出ている。日本本社の駐在前提で組んだ計画ほど影響を受けやすく、現地採用や短期出張との組み合わせを含めた代替案を先に用意しておく必要がある。人事、法務、現場責任者の三者で説明文のテンプレートを持っておくことが重要になっている。",
+    source: "Business Standard",
+    sourceUrl: "https://www.business-standard.com/",
+    publishedAt: "2026-04-13",
     category: "regulation",
-    date: "2026-04-05",
-    source: "DPIIT通達",
-    sourceUrl: "https://dpiit.gov.in/policies-rules-and-acts/policies/foreign-direct-investment-policy",
-    imageUrl: "/images/article-3.jpg",
-    body: "インド商工省のDPIIT（産業政策・促進局）は、外国直接投資（FDI）規制の改正案を発表した。最大の変更点は、マルチブランド小売業における外国資本の出資上限を現行の51%から74%に引き上げる点だ。\n\nまた、eコマース分野でも規制緩和が進む。現行では認められていないインベントリーモデル（自社在庫保有型）のeコマースについて、一定の条件下で外資100%を認める方針が示された。\n\n条件には、国内調達比率30%以上の維持、中小企業からの優先調達、地方都市への展開計画の提出などが含まれる。",
-    interpretation:
-      "日本企業への影響：小売・流通業の進出障壁が大幅に低下。イオン、セブン＆アイなどの大手小売にとって、インド市場への本格参入を検討するタイミング。",
+    industryTags: ["talent"],
+    implications: [
+      "注意点: 日本本社からの駐在・出張前提で採用計画を組むと遅延しやすい。",
+      "次アクション: 職務記述書とプロジェクト実績の英文テンプレートを先に整備する。",
+      "代替策: 現地採用比率を高め、立ち上げ初期の常駐依存を下げる。",
+    ],
+    contentType: "news",
+    visibility: "public",
+    workflowStatus: "published",
+    imageUrl: "/images/article-11.jpg",
   },
   {
     id: "4",
-    title: "タタ・モーターズとトヨタ、EV分野で戦略的提携を発表",
+    title: "都市部の教育支出増で日系EdTech提携の相談が拡大",
     summary:
-      "バッテリー技術と生産プラットフォームの共同開発で合意。2028年までに共同開発EVを3車種投入予定。",
-    category: "corporate",
-    date: "2026-04-05",
-    source: "両社共同プレスリリース",
-    sourceUrl: "https://global.toyota/en/newsroom/",
-    imageUrl: "/images/article-4.jpg",
-    body: "タタ・モーターズとトヨタ自動車は4月4日、電気自動車（EV）分野における戦略的パートナーシップ契約を締結したと発表した。提携の柱は、バッテリー技術の共同開発と、EV専用プラットフォームの共有だ。\n\nトヨタが持つ固体電池技術と、タタが展開する「Ziptron」EVプラットフォームを融合させ、インド市場向けの低価格EVを共同開発する。2028年までに3車種を投入し、価格帯は150万～300万ルピー（約270万～540万円）を想定している。\n\n両社は合弁会社の設立も視野に入れており、初期投資額は約2,000億円規模になる見通し。",
-    interpretation:
-      "日本企業への影響：トヨタのティア1・ティア2サプライヤーにとって、インド市場向けEV部品の受注機会が拡大。現地生産体制の構築を早期に検討すべき。",
+      "都市部の中間所得層で教育支出が増え、語学、STEM、資格講座などの学校外学習市場が拡大している。保護者の支出姿勢は依然として価格感度が高いものの、単なる授業提供だけでなく、進学・就職につながる成果を示せるサービスへの評価は上がっている。現地プレイヤーだけで完結するのではなく、日本の教育コンテンツや職業訓練ノウハウを組み合わせたいという相談も増えており、日系企業には直営進出より提携型での入口が広がっている。州や都市によって言語対応や支払い能力に差があるため、ひとつの商品設計で全国展開するより、提携先と共同で地域別に構成を調整するアプローチが現実的だ。",
+    source: "Education Market Feed",
+    sourceUrl: "https://www.educationworld.in/",
+    publishedAt: "2026-04-12",
+    category: "social",
+    industryTags: ["education", "talent"],
+    implications: [
+      "勝機あり: 直営よりも現地パートナー連携型の参入が成立しやすい。",
+      "注意点: 価格感度が高く、都市別に商品構成を分ける必要がある。",
+      "次アクション: B2B2C の販路候補として学校法人と人材育成企業を洗い出す。",
+    ],
+    contentType: "news",
+    visibility: "public",
+    workflowStatus: "published",
+    imageUrl: "/images/article-8.jpg",
   },
   {
     id: "5",
-    title: "バンガロール発のAIスタートアップKrutrim、シリーズCで10億ドル調達",
+    title: "地域言語コンテンツの伸長で日本IPの配信戦略が変化",
     summary:
-      "インド初のAIユニコーンがさらなる成長加速。多言語LLMの開発でグローバル展開を視野に。",
-    category: "startup",
-    date: "2026-04-04",
-    source: "TechCrunch India",
-    sourceUrl: "https://techcrunch.com/tag/india/",
-    imageUrl: "/images/article-5.jpg",
-    body: "バンガロールを拠点とするAIスタートアップ「Krutrim」が、シリーズCラウンドで10億ドル（約1,500億円）の資金調達を完了した。評価額は50億ドルに達し、インドのAI分野では最大規模の調達となる。\n\nKrutrimは、インドの22の公用語に対応する多言語大規模言語モデル（LLM）を開発しており、政府機関や金融機関を中心に導入が進んでいる。今回の調達資金は、モデルの高度化と東南アジア・中東市場への展開に充てられる。\n\n創業者のバヴィシュ・アグガルワル氏（Ola創業者）は「インドから世界に通用するAI基盤を作る」と述べた。",
-    interpretation:
-      "日本企業への影響：多言語AI技術��日本企業��インド現地オペレー���ョンにも活用可能。カスタマーサポート、ドキュメント処理、社内コミュニケーションの効率化に寄与。",
+      "動画配信市場ではヒンディー語以外の地域言語コンテンツが着実に存在感を高めており、日本発IPの展開でもローカライズの深さが成否を分ける局面に入っている。従来は英語字幕や一部吹き替えでも一定の反応が取れたが、現在は州ごとの視聴文化に合わせて配信時期、訴求クリエイティブ、物販連動を調整する事業者が伸びている。日本企業にとっては、コンテンツ単体の販売よりも、配信、イベント、ライセンス商品を横断して展開するほうが収益の厚みを作りやすい。一方で、全国一律の販促設計では反応差が大きく、どの地域言語から優先して手を付けるかの見極めが必要になっている。",
+    source: "Hindustan Media Ventures",
+    sourceUrl: "https://www.hindustantimes.com/",
+    publishedAt: "2026-04-11",
+    category: "culture",
+    industryTags: ["entertainment"],
+    implications: [
+      "勝機あり: 地域言語対応を前提にした配信・物販連動が有効。",
+      "注意点: 一括で英語化するだけでは拡散しづらくなっている。",
+      "次アクション: 州別の視聴データを見て、優先言語の翻訳順を決める。",
+    ],
+    contentType: "news",
+    visibility: "public",
+    workflowStatus: "published",
+    imageUrl: "/images/article-14.jpg",
   },
   {
     id: "6",
-    title: "デリーNCR地域の大気汚染、今年度は改善傾向",
+    title: "4月16日の為替・株式・金利・原油: ルピー堅調、株高継続",
     summary:
-      "政府の排出規制強化とEV普及が寄与。ただし工業地帯での課題は残る。駐在員の生活環境にも関わる重要指標。",
-    category: "social",
-    date: "2026-04-04",
-    source: "CPCB年次報告",
-    sourceUrl: "https://cpcb.nic.in/",
-    imageUrl: "/images/article-6.jpg",
-    body: "中央公害規制委員会（CPCB）が発表した2025年度の大気質年次報告書によると、デリーNCR（首都圏）のPM2.5年平均濃度は前年比で12%低下した。これは2019年以降で最大の改善幅となる。\n\n改善の要因として、政府が実施したグレード付き対応行動計画（GRAP）の厳格な運用、BS-VI排出基準の完全施行、そしてEVの普及（デリー内の新車販売の18%がEV）が挙げられている。\n\nただし、工業地帯であるファリダバードやガジアバードでは依然としてWHO基準の3倍以上の汚染レベルが続いており、地域格差の解消が課題となっている。",
-    interpretation:
-      "日本企業への影響：デリー駐在員の生活環境は改善傾向にあるものの、工業地帯での事業展開時は従業員の健康管理体制の整備が引き続き重要。",
+      "4月16日のインド市場は、ルピーが対円でやや持ち直し、株式市場では主要指数が続伸した一方、長期金利はやや低下、原油は中東情勢を背景に上昇した。ルピーの底堅さは資金流入と金利見通しの落ち着きを反映しており、輸入比率の高い企業にとっては一時的なコスト安定要因になる。一方で株価上昇は国内需要と大型投資への期待感を映しているが、原油高が続けば輸送・化学・素材コストには逆風となる。日系企業としては、短期の為替水準だけを見るのではなく、株式センチメント、資金調達金利、エネルギーコストをまとめて見て、価格改定や仕入れタイミングの判断材料にする必要がある日だ。",
+    source: "編集部マーケットまとめ",
+    publishedAt: "2026-04-16",
+    category: "market",
+    industryTags: [],
+    implications: [
+      "注意点: 原油高が輸送費と化学素材コストの上昇圧力になる。",
+      "次アクション: 為替だけでなく金利と原油も合わせて見て月次収支前提を更新する。",
+      "確認項目: 値上げ交渉や仕入れ前倒しの必要性を今週中に点検する。",
+    ],
+    contentType: "news",
+    visibility: "public",
+    workflowStatus: "published",
+    imageUrl: "/images/article-1.jpg",
+    marketSnapshot: DEFAULT_MARKET_SNAPSHOT,
   },
   {
     id: "7",
-    title: "インド進出の落とし穴：ある中堅メーカーの撤退から学ぶ教訓",
+    title: "現地工場の購買責任者が語る、工作機械選定で外せない3条件",
     summary:
-      "進出から3年で撤退を決断した中堅精密部品メーカーの事例。現地パートナー選定と労務管理の重要性を考察。",
+      "西インドで工場立ち上げを担った購買責任者への寄稿。現場では本体価格だけでなく、故障時に誰が何日で来られるか、交換部品をどこから何日で調達できるか、立ち上げ後に現地スタッフへどこまで教育を移管できるかが発注判断を大きく左右しているという。日本側は高精度を強みに語りがちだが、現地では停止時間の短さと復旧の確実性がより重視される。結果として、納入後の保守体制や教育パッケージまで含めて提案した企業の方が、価格競争を避けながら採用されやすい。設備販売を単発商材ではなく運用支援まで含めた契約として組み直す視点が重要だと指摘している。",
+    source: "編集部寄稿",
+    publishedAt: "2026-04-10",
     category: "column",
-    date: "2026-04-03",
-    source: "編集部",
-    body: "2022年にインド・プネーに製造拠点を設立した中堅精密部品メーカーA社（従業員約300名）は、2025年末に撤退を決断した。進出時の目論見と実態のギャップについて、当時の駐在責任者B氏に取材した。\n\n「最大の誤算は現地パートナーの選定でした」とB氏は振り返る。合弁相手として選んだ現地企業は、政府関係に強いという触れ込みだったが、実際には製造業の経験が乏しく、品質管理の考え方に根本的な差があった。\n\n「日本式の品質基準を求めたが、現場のエンジニアは異なるスタンダードで育っている。教育には最低2年必要だが、離職率が高く、育成した人材が定着しない」\n\n労務管理も大きな課題だった。労働法の複雑さに加え、州ごとに異なる規制への対応が想定以上の負担となった。\n\n「今振り返ると、初期投資を抑えたスモールスタートにすべきだった。また、パートナーは製造業の実績があり、かつ品質に対する理解が深い企業を選ぶべきだった」",
+    industryTags: ["machine_tools", "automotive"],
+    implications: [
+      "勝機あり: 納入後の教育と保守を含む提案は価格競争を避けやすい。",
+      "注意点: 日本本社の基準だけでベンダー評価すると導入速度が落ちる。",
+      "次アクション: 販売代理店ではなく保守実行体制まで商談時に確認する。",
+    ],
+    contentType: "column",
+    visibility: "member",
+    workflowStatus: "published",
+    imageUrl: "/images/article-6.jpg",
   },
   {
     id: "8",
-    title: "ルピー、対ドルで過去最安値を更新 88.5ルピー台に",
+    title: "食品加工向け包装材の国産化が進み、輸入仕様の見直し圧力",
     summary:
-      "米国の利上げ長期化観測とインドの経常赤字拡大が要因。日本企業の為替リスク管理が一層重要に。",
+      "食品加工業界では包装材の国産化が進み、従来は輸入仕様を前提にしていた調達設計の見直し圧力が強まっている。現地サプライヤーの品質が一気に均一化したわけではないが、認証対応や供給安定性を備えた企業が増えたことで、価格だけでなく調達スピードの面で優位性が出始めている。日系企業にとっては高機能材をそのまま輸入するモデルだけでは不利になりやすく、現地加工や共同開発を含めた選択肢を持つ必要がある。食品安全基準や包材認証の運用差も残るため、営業と品質保証の両面から現地パートナーの絞り込みを進めることが重要になっている。",
+    source: "Food Industry Monitor",
+    sourceUrl: "https://www.foodprocessingindia.gov.in/",
+    publishedAt: "2026-04-09",
     category: "economy",
-    date: "2026-04-03",
-    source: "Reuters",
-    sourceUrl: "https://www.reuters.com/markets/currencies/",
-    imageUrl: "/images/article-8.jpg",
-    body: "インドルピーは4月2日の外国為替市場で、対米ドルで過去最安値となる1ドル＝88.52ルピーを記録した。前日比0.3%の下落となり、年初来では3.2%の減価となった。\n\n背景には、米連邦準備制度理事会（FRB）による利上げ長期化の見通しと、インドの経常赤字拡大がある。2025年度第4四半期の経常赤字はGDP比2.8%と、前年同期の1.2%から大幅に拡大した。\n\nRBIは外貨準備を活用した介入を行っているが、600億ドル規模の介入にもかかわらず、ルピー安の流れを止められていない。",
-    interpretation:
-      "日本企業への影響：円建て収益への影響は複合的。ルピー安は日本からの輸出競争力を低下させるが、現地生産のコスト優位性は維持される。為替予約の見直しを推奨。",
+    industryTags: ["food", "chemicals"],
+    implications: [
+      "勝機あり: 高機能包装材や品質保証の仕組みは差別化余地が大きい。",
+      "注意点: 現地調達比率の要求が強まっており、輸入一本足は不利。",
+      "次アクション: 認証対応可能な現地加工パートナー候補を早めに確保する。",
+    ],
+    contentType: "news",
+    visibility: "public",
+    workflowStatus: "published",
+    imageUrl: "/images/article-12.jpg",
   },
   {
     id: "9",
-    title: "インド統一商品サービス税（GST）の税率改定案が閣議決定",
+    title: "冷蔵物流の投資拡大で農業・食品サプライチェーンが再編",
     summary:
-      "IT機器・EV部品の税率引き下げ、高級品への課税強化。7月1日施行予定。",
-    category: "regulation",
-    date: "2026-04-02",
-    source: "財務省発表",
-    sourceUrl: "https://www.indiabudget.gov.in/",
-    imageUrl: "/images/article-9.jpg",
-    body: "インド内閣はGST（統一商品サービス税）の税率改定案を閣議決定した。主な変更点は、IT機器（ノートPC、サーバー等）の税率を18%から12%へ引き下げ、EV関連部品の税率を12%から5%へ引き下げる一方、高級時計や高級衣料品への税率を28%から35%へ引き上げるものだ。\n\n改定は7月1日から施行される予定で、IT産業とEV産業の成長を後押しする狙いがある。",
-    interpretation:
-      "日本企業への影響：IT機器メーカーやEV部品サプライヤーにとっては追い風。一方、高級消費財を扱う企業は価格戦略の見直しが必要。",
+      "冷蔵倉庫と保冷輸送への投資が増え、生鮮と加工食品の流通設計が大きく変わり始めている。これまでロス前提で設計されていた区間に温度管理が入り、農業と食品の境界領域で在庫可視化や品質保証ソリューションへの需要が高まっている。とくに大都市向けの広域流通では、冷蔵輸送そのものだけでなく、倉庫の回転率、温度記録、配送遅延時の代替ルート設計まで含めた運用提案が求められている。日系企業にとっては設備販売だけでなく、運用データや保守も含めた長期契約の余地があり、コールドチェーンを支える周辺領域で商機が広がっている。",
+    source: "Agri Logistics Feed",
+    sourceUrl: "https://agricoop.nic.in/",
+    publishedAt: "2026-04-08",
+    category: "economy",
+    industryTags: ["agriculture", "logistics", "food"],
+    implications: [
+      "勝機あり: 温度記録、在庫見える化、品質保証の周辺需要が伸びる。",
+      "注意点: 州またぎ流通では依然として道路事情の差が大きい。",
+      "次アクション: コールドチェーン運営会社との提携可否を先に確認する。",
+    ],
+    contentType: "news",
+    visibility: "public",
+    workflowStatus: "published",
+    imageUrl: "/images/article-4.jpg",
   },
   {
     id: "10",
-    title: "ムンバイ-アーメダバード高速鉄道、2027年部分開業を正式発表",
+    title: "進出済み日系企業に聞く、採用競争下で定着率を上げた評価制度",
     summary:
-      "日印共同プロジェクトの新幹線技術導入が着実に進行。日系建設・車両メーカーへの受注が本格化。",
-    category: "corporate",
-    date: "2026-04-01",
-    source: "NHSRCL発表",
-    sourceUrl: "https://nhsrcl.in/",
-    imageUrl: "/images/article-10.jpg",
-    body: "国家高速鉄道公社（NHSRCL）は、ムンバイ-アーメダバード間の高速鉄道（全長508km）について、2027年12月にスーラト-ビリモラ間の部分開業を行うことを正式発表した。\n\n日本の新幹線技術（E5系をベースとした車両）が導入される同プロジェクトは、日本政府の円借款（約1.5兆円）により資金が賄われている。現在、全区間の工事進捗率は62%に達している。\n\n車両製造は日立製作所と川崎重工が担当し、インド国内での現地生産も計画されている。信号システムは日本信号が受注している。",
-    interpretation:
-      "日本企業への影響：建設、車両、信号、電力設備など幅広い分野で日系企業の参画が進行中。ティア2以下のサプライヤーにとっても参入機会がある。",
+      "チェンナイで事業を拡大する日系企業へのインタビュー。現地の採用競争が激しくなる中、賃金だけで引き留めるのではなく、評価理由の透明化、上司との定期1on1、昇格条件の明文化を進めたことで定着率が改善したという。日本本社の曖昧な期待値をそのまま持ち込むと、現地社員には将来像が見えにくくなり、転職市場が活発な地域ほど離職につながりやすい。逆に、何を達成すると評価されるのかを開示し、研修機会と連動させたことで、採用広報でも好影響が出た。評価制度は人事施策に見えて、実際には採用競争力そのものに直結しているという示唆が強い。",
+    source: "編集部インタビュー",
+    publishedAt: "2026-04-07",
+    category: "column",
+    industryTags: ["talent", "automotive"],
+    implications: [
+      "勝機あり: 評価制度の見える化は採用広報にも転用できる。",
+      "注意点: 日本式の曖昧な査定理由は離職リスクを高めやすい。",
+      "次アクション: 現地管理職向けに面談スクリプトと評価説明資料を整備する。",
+    ],
+    contentType: "interview",
+    visibility: "member",
+    workflowStatus: "published",
+    imageUrl: "/images/article-13.jpg",
   },
   {
     id: "11",
-    title: "インド政府、2026年度予算でインフラ投資を過去最大の11.1兆ルピーに",
+    title: "鋼材価格の戻りで自動車向け調達契約の改定交渉が活発化",
     summary:
-      "前年比25%増の公共投資。道路、鉄道、港湾、デジタルインフラが重点分野。",
-    category: "policy",
-    date: "2026-04-01",
-    source: "財務省予算書",
-    sourceUrl: "https://www.indiabudget.gov.in/",
-    imageUrl: "/images/article-11.jpg",
-    body: "シタラマン財務相が発表した2026年度予算案によると、インフラ向け資本支出は11.1兆ルピー（約20兆円）と、前年度比25%増の過去最大規模となった。\n\n重点分野は、国道建設（2.5兆ルピー）、鉄道近代化（2.4兆ルピー）、港湾整備（0.8兆ルピー）、デジタルインフラ（1.2兆ルピー）。特にデジタルインフラでは、全国を光ファイバーネットワークで結ぶ「デジタル・インディア2.0」に大型予算が配分された。",
-    interpretation:
-      "日本企業への影響：インフラ関連の受注機会が拡大。特に���������械（コマツ、日立建機）、電力設備（三菱電機）、通信インフラ（NEC��富士通）に追い風。",
+      "鋼材市況の戻りを受け、自動車部品各社で四半期ごとの価格改定交渉が増えている。年次一括契約では変動を吸収しにくくなり、日系メーカーでも現地サプライヤーとの契約条件を見直す動きが広がっている。とくに量産立ち上げ期は原材料スライド条項の有無が採算に直結し、鋼材だけでなく物流や電力の変動も含めて交渉材料に持ち込む企業が増えている。市場価格の上昇局面では、代替材提案や共同購買の枠組みも商談の入口になりやすく、調達部門だけでなく営業・設計とも連携して条件を見直す必要がある。",
+    source: "Steel Market Watch",
+    sourceUrl: "https://steel.gov.in/",
+    publishedAt: "2026-04-06",
+    category: "economy",
+    industryTags: ["steel", "automotive"],
+    implications: [
+      "注意点: 年次一括契約では価格変動を吸収しにくい局面に入っている。",
+      "勝機あり: 代替材提案や共同購買の打診は商談の入口になりやすい。",
+      "次アクション: 原材料スライド条項の有無を既存契約で総点検する。",
+    ],
+    contentType: "news",
+    visibility: "public",
+    workflowStatus: "published",
+    imageUrl: "/images/article-5.jpg",
   },
   {
     id: "12",
-    title: "駐在員の本音：バンガロールのIT都市生活はここが違う",
+    title: "輸入ライセンス運用の追加説明待ちで、規制記事をレビューキューへ",
     summary:
-      "バンガロール駐在3年目のIT企業マネージャーが語る、現地での生活と仕事のリアル。",
-    category: "column",
-    date: "2026-03-31",
-    source: "編集部",
-    imageUrl: "/images/article-12.jpg",
-    body: "バンガロールに駐在して3年目になるIT企業のマネージャーC氏に、現地生活のリアルを聞いた。\n\n「最初の半年は正直つらかったです。食事、交通、言語の壁がすべて同時に来ました」とC氏は振り返る。「でも今は、この街のエネルギーに圧倒されています。毎週のように新しいスタートアップが生まれ、テクノロジーへの熱量は東京の比ではありません」\n\n生活面では、コルマンガラやインディラナガルなど外国人が多いエリアに住むことで、食事や買い物の不便さはかなり解消されるという。「日本食レストランも増えましたし、日本の食材を扱うスーパーもあります」\n\n一方、交通渋滞は依然として大きな課題だ。「通勤に1時間半かかることもあり、リモートワークを積極的に取り入れています」",
+      "制度改定の一次情報は取得済みだが、現地実務での解釈が複数に分かれているため公開前レビューへ移送したサンプル。規制カテゴリでは条文の発表と現場運用の間に時間差があり、通関、販売、法務で受け止め方が割れるケースが少なくない。とくに輸入ライセンスや品質表示の領域では、地方当局ごとの差も出やすいため、発表直後の情報をそのまま断定的に出すと誤解を招く。運用が安定するまでは非公開キューに落とし、人確認で補足する設計を残しておくことが、全自動運用でも重要になる。",
+    source: "Internal Queue",
+    publishedAt: "2026-04-05",
+    category: "regulation",
+    industryTags: ["chemicals", "food"],
+    implications: [
+      "注意点: 規制運用が固まる前の拡散は誤判断につながりやすい。",
+      "次アクション: 法務・通関・販売現場の3視点で解釈を照合する。",
+    ],
+    contentType: "news",
+    visibility: "member",
+    workflowStatus: "review",
+    imageUrl: "/images/article-11.jpg",
   },
   {
     id: "13",
-    title: "なぜインドの祝祭日カレンダーがビジネスの命運を分けるのか",
+    title: "要約生成に失敗した記事サンプル",
     summary:
-      "ディワリ、ホーリー、ダシェラ――インドの祝祭シーズンは消費が爆発的に伸びる一方、工場稼働率は急低下する。文化暦の理解なくしてインドビジネスは語れない。",
-    category: "culture",
-    date: "2026-04-05",
-    source: "編集部",
-    imageUrl: "/images/article-13.jpg",
-    body: "インドには公式に認定された国民の祝日だけで年間約20日、州独自の祝日を含めると50日を超える祝祭日がある。多宗教・多民族国家ゆえのこの祝祭カレンダーは、インドで事業を展開する日本企業にとって避けて通れない経営課題だ。\n\n最大の商戦期はディワリ（光の祭典、10〜11月）前の約1カ月間で、小売売上は通常月の3〜5倍に跳ね上がる。2025年のディワリ商戦ではEC取引額が過去最高の120億ドルを記録した。自動車・家電・宝飾品など耐久消費財の購入が集中するため、在庫戦略と物流体制の事前準備が不可欠となる。\n\n一方、祝祭期間中の工場稼働率は大幅に低下する。特にウッタル・プラデーシュ州やビハール州出身の労働者が多い工場では、チャート・プージャ（10〜11月）やホーリー（3月）の前後に大量離脱が発生し、生産計画に重大な影響を及ぼす。\n\n「日本の工場感覚でラインを組むと痛い目に遭います」と、チェンナイで自動車部品工場を運営する日系メーカーの工場長は語る。「祝祭日シフトを年初に組み込み、繁忙期前に在庫を積み増す『フェスティバル・バッファ』を設けるようになってから、納期遅延は激減しました」\n\nまた、祝祭日は商談や契約のタイミングにも直結する。ディワリの時期に取引先に贈答品（ミタイと呼ばれる菓子やドライフルーツの詰め合わせ）を贈る文化は根強く、これを怠ると関係が冷え込むリスクすらある。逆に、ムハッラム（イスラム教の喪の期間）に派手な接待を行えば、相手の心証を損ねかねない。",
-    interpretation:
-      "日本企業への影響：インドの祝祭カレンダーは単なる「休日一覧」ではなく、消費動向・労務管理・取引先関係のすべてに影響するビジネス・インフラの一部。年間計画策定時に祝祭日を織り込むことが必須であり、現地スタッフによる文化ブリーフィングの定例化を推奨する。",
-  },
-  {
-    id: "14",
-    title: "インドの「ジュガード」精神と日本式品質管理は共存できるか",
-    summary:
-      "「あるもので何とかする」即興的な問題解決文化ジュガードは、インド社会に深く根付く価値観。日本企業が直面する品質哲学の衝突と融合の現場を追う。",
-    category: "culture",
-    date: "2026-04-02",
-    source: "編集部",
-    sourceUrl: "https://hbr.org/topic/subject/india",
-    imageUrl: "/images/article-14.jpg",
-    body: "ジュガード(Jugaad)とは、ヒンディー語で「限られた資源で創意工夫して問題を解決する」ことを意味する概念で、インドのビジネス文化を理解する上で欠かせないキーワードだ。壊れた機械を針金で修理する、規格外の部品を加工して使う――こうした「何とかする力」はインドの急成長を支えてきた原動力でもある。\n\nしかし、日本企業が重視する「標準化」「再現性」「ゼロ・ディフェクト」とジュガード精神は、しばしば正面から衝突する。グルガオン近郊の工業団地で精密機器を製造する日系企業D社の品質管理部長は、着任当初の衝撃をこう振り返る。\n\n「検査工程で不合格になった部品を、現場の作業員が独自の判断でヤスリがけして再投入していたんです。彼らにとっては『もったいないから直して使う』という合理的な行動。悪意はまったくない。でも、品質基準としては完全にアウトでした」\n\nD社はこの課題に対し、単に日本式ルールを押し付けるのではなく、ジュガード精神を品質改善の方向に活かす「ハイブリッド・アプローチ」を採用した。具体的には、現場作業員から改善提案(カイゼン)を募り、優れたアイデアに報奨金を出す制度を導入。すると、標準化されたプロセスの中でコスト削減や効率化のアイデアが次々と生まれ、年間で生産コストを8%削減することに成功した。\n\n「ジュガードを否定するのではなく、チャネルを変えてやる。『何とかする力』をルールの中で発揮してもらう仕組みをつくることが大事です」と同部長は語る。\n\nこの文化的融合は、単なる工場運営にとどまらない。営業・マーケティングの現場でも、インド人社員のジュガード的な市場開拓力と日本本社のブランド管理基準のバランスが常に問われている。",
-    interpretation:
-      "日本企業への影響：ジュガード精神は『いい加減さ』ではなく、資源制約下のイノベーション能力として捉え直す必要がある。現地オペレーションでは、日本式標準とインド式創意工夫を融合させるハイブリッド型マネジメントが鍵。着任前研修で文化的背景への理解を深めることが、現場でのコンフリクトを大幅に減らす。",
+      "翻訳結果が空で示唆生成にも失敗したため、公開対象から除外したサンプル。失敗データを残しておくことで、後から収集条件や翻訳プロンプトを調整し、再処理の対象を特定しやすくしている。全自動運用では成功記事だけを見ると問題が見えにくくなるため、失敗件数と失敗理由を管理画面で把握できるようにしておくことが重要になる。将来的に自動再実行や運用アラートを入れる前提でも、まずは失敗が発生した時点の状態を保持することを優先している。",
+    source: "Automation Log",
+    publishedAt: "2026-04-04",
+    category: "economy",
+    industryTags: ["logistics"],
+    implications: ["処理失敗サンプル。公開はされない。"],
+    contentType: "news",
+    visibility: "member",
+    workflowStatus: "failed",
   },
 ]
+
+export function getPublicSeedArticles() {
+  return NEWS_ARTICLES.filter((article) => article.workflowStatus === "published")
+}

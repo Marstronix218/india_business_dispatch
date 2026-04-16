@@ -1,119 +1,146 @@
 "use client"
 
-import { useState, useMemo } from "react"
-import { SiteHeader } from "@/components/site-header"
-import { SiteFooter } from "@/components/site-footer"
+import { useDeferredValue, useMemo, useState } from "react"
+import { Filter } from "lucide-react"
 import { NewsCardFeatured, NewsCardGridItem } from "@/components/news-card"
-import { TrendingWidget } from "@/components/sidebar-widgets"
-import { type Category } from "@/lib/news-data"
-import { useArticles } from "@/lib/article-store"
+import { SiteFooter } from "@/components/site-footer"
+import { SiteHeader } from "@/components/site-header"
+import { Input } from "@/components/ui/input"
+import { usePublicArticles } from "@/lib/article-store"
+import {
+  INDUSTRY_LABELS,
+  INDUSTRY_OPTIONS,
+  type Category,
+  type IndustryTag,
+} from "@/lib/news-data"
 
 export function NewsList() {
   const [activeCategory, setActiveCategory] = useState<Category | null>(null)
+  const [selectedIndustries, setSelectedIndustries] = useState<IndustryTag[]>([])
   const [searchQuery, setSearchQuery] = useState("")
-  const allArticles = useArticles()
+  const deferredSearchQuery = useDeferredValue(searchQuery)
+  const publicArticles = usePublicArticles()
 
   const filteredArticles = useMemo(() => {
-    let articles = allArticles
+    const query = deferredSearchQuery.trim().toLowerCase()
 
-    if (activeCategory) {
-      articles = articles.filter((a) => a.category === activeCategory)
-    }
+    return [...publicArticles]
+      .filter((article) => {
+        const matchesCategory =
+          activeCategory === null || article.category === activeCategory
 
-    if (searchQuery.trim()) {
-      const query = searchQuery.toLowerCase()
-      articles = articles.filter(
-        (a) =>
-          a.title.toLowerCase().includes(query) ||
-          a.summary.toLowerCase().includes(query)
-      )
-    }
+        const matchesIndustry =
+          selectedIndustries.length === 0 ||
+          article.industryTags.some((tag) => selectedIndustries.includes(tag))
 
-    // ソート：新しい日付から古い日付順
-    articles = articles.sort((a, b) => {
-      return new Date(b.date).getTime() - new Date(a.date).getTime()
-    })
+        const haystack = [
+          article.title,
+          article.summary,
+          article.source,
+          ...article.implications,
+        ]
+          .join(" ")
+          .toLowerCase()
 
-    return articles
-  }, [activeCategory, searchQuery])
+        const matchesQuery = !query || haystack.includes(query)
 
-  const featuredArticle = filteredArticles[0]
-  const restArticles = filteredArticles.slice(1)
+        return matchesCategory && matchesIndustry && matchesQuery
+      })
+      .sort((left, right) => {
+        return (
+          new Date(right.publishedAt).getTime() -
+          new Date(left.publishedAt).getTime()
+        )
+      })
+  }, [activeCategory, deferredSearchQuery, publicArticles, selectedIndustries])
+
+  const featuredArticle =
+    filteredArticles.find((article) => article.featured) ?? filteredArticles[0]
+  const gridArticles = filteredArticles.filter(
+    (article) => article.id !== featuredArticle?.id,
+  )
+
+  function toggleIndustry(tag: IndustryTag) {
+    setSelectedIndustries((current) =>
+      current.includes(tag)
+        ? current.filter((item) => item !== tag)
+        : [...current, tag],
+    )
+  }
 
   return (
-    <div className="min-h-screen flex flex-col bg-background">
+    <div className="min-h-screen bg-background">
       <SiteHeader
-        onSearch={setSearchQuery}
-        onCategorySelect={setActiveCategory}
         activeCategory={activeCategory}
+        onCategorySelect={setActiveCategory}
       />
 
-      <main className="flex-1">
-        <div className="w-full px-4 sm:px-6 lg:px-8 py-4">
-          <div className="mx-auto max-w-7xl">
-          {(activeCategory || searchQuery) && (
-            <div className="mb-4 flex items-center gap-2">
-              <p className="text-sm text-muted-foreground">
-                {filteredArticles.length}
-                {"件の記事"}
-                {activeCategory && (
-                  <button
-                    onClick={() => setActiveCategory(null)}
-                    className="ml-2 text-xs text-accent hover:underline"
-                  >
-                    {"フィルタを解除"}
-                  </button>
-                )}
-                {searchQuery && (
-                  <button
-                    onClick={() => setSearchQuery("")}
-                    className="ml-2 text-xs text-accent hover:underline"
-                  >
-                    {"検索をクリア"}
-                  </button>
-                )}
-              </p>
-            </div>
-          )}
+      <main className="mx-auto max-w-7xl px-4 py-5 sm:px-6 lg:px-8">
 
-          <div className="flex flex-col gap-6 md:flex-row">
-            {/* Main column - article list */}
-            <div className="flex-1 min-w-0">
-              {filteredArticles.length === 0 ? (
-                <div className="py-20 text-center">
-                  <p className="text-muted-foreground text-sm">
-                    {"該当するニュースが見つかりませんでした。"}
-                  </p>
-                </div>
-              ) : (
-                <>
-                  {/* Featured article - horizontal layout */}
-                  {featuredArticle && (
-                    <NewsCardFeatured article={featuredArticle} />
-                  )}
+        <div className="mb-4 grid gap-3 rounded-2xl border border-border bg-card p-3 lg:grid-cols-[1fr_auto]">
+          <div className="relative w-full">
+            <Filter className="pointer-events-none absolute left-3 top-1/2 size-4 -translate-y-1/2 text-muted-foreground" />
+            <Input
+              type="search"
+              value={searchQuery}
+              onChange={(event) => setSearchQuery(event.target.value)}
+              placeholder="タイトル、要約、示唆で検索"
+              className="pl-9"
+            />
+          </div>
 
-                  {/* Rest of articles - 2-column grid */}
-                  {restArticles.length > 0 && (
-                    <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
-                      {restArticles.map((article) => (
-                        <NewsCardGridItem
-                          key={article.id}
-                          article={article}
-                        />
-                      ))}
-                    </div>
-                  )}
-                </>
-              )}
-            </div>
-
-            {/* Sidebar - right column (lighter) */}
-            <aside className="w-full md:w-72 shrink-0 order-last md:order-none">
-              <TrendingWidget />
-            </aside>
+          <div className="flex flex-wrap gap-2">
+            {INDUSTRY_OPTIONS.map((tag) => {
+              const active = selectedIndustries.includes(tag)
+              return (
+                <button
+                  key={tag}
+                  type="button"
+                  onClick={() => toggleIndustry(tag)}
+                  className={`rounded-full border px-3 py-1.5 text-xs transition-colors ${
+                    active
+                      ? "border-primary bg-primary text-primary-foreground"
+                      : "border-border bg-background text-muted-foreground hover:text-foreground"
+                  }`}
+                >
+                  {INDUSTRY_LABELS[tag]}
+                </button>
+              )
+            })}
           </div>
         </div>
-        </div>
+
+        {(activeCategory || selectedIndustries.length > 0 || searchQuery) && (
+          <div className="mb-4 flex items-center gap-3 text-sm text-muted-foreground">
+            <span>{filteredArticles.length}件を表示中</span>
+            <button
+              type="button"
+              onClick={() => {
+                setActiveCategory(null)
+                setSelectedIndustries([])
+                setSearchQuery("")
+              }}
+              className="text-accent underline-offset-4 hover:underline"
+            >
+              フィルタを解除
+            </button>
+          </div>
+        )}
+
+        {featuredArticle ? (
+          <div className="space-y-3">
+            <NewsCardFeatured article={featuredArticle} />
+            <div className="grid gap-3 lg:grid-cols-2">
+              {gridArticles.map((article) => (
+                <NewsCardGridItem key={article.id} article={article} />
+              ))}
+            </div>
+          </div>
+        ) : (
+          <div className="rounded-2xl border border-border bg-card p-8 text-sm text-muted-foreground">
+            条件に合う記事が見つかりませんでした。
+          </div>
+        )}
       </main>
 
       <SiteFooter />

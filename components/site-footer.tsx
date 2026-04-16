@@ -1,75 +1,62 @@
 import Link from "next/link"
 import { Separator } from "@/components/ui/separator"
+import { CATEGORY_OPTIONS, CATEGORY_LABELS } from "@/lib/news-data"
 
 export function SiteFooter() {
   return (
-    <footer className="bg-primary text-primary-foreground mt-12">
-      <div className="mx-auto max-w-6xl px-4 py-10">
-        <div className="grid grid-cols-1 gap-8 md:grid-cols-3">
-          <div>
-            <h4 className="text-base font-bold mb-1">India Business Dispatch</h4>
-            <p className="text-xs opacity-70 mb-4">
-              {"インド・ビジネス・ディスパッチ"}
-            </p>
-            <p className="text-xs opacity-80 leading-relaxed max-w-xs">
-              {"日本企業のためのインドビジネス情報プラットフォーム。信頼できる情報を毎日お届けします。"}
+    <footer className="mt-16 bg-primary text-primary-foreground">
+      <div className="mx-auto max-w-7xl px-4 py-12 sm:px-6 lg:px-8">
+        <div className="grid gap-10 md:grid-cols-3">
+          <div className="space-y-3">
+            <h4 className="text-xl font-semibold">India Business Dispatch</h4>
+            <p className="max-w-sm text-sm leading-7 text-primary-foreground/75">
+              日本企業向けに、インド市場の短報、業界別ウォッチ、進出・採用の示唆を届ける v1 プロダクトです。
             </p>
           </div>
-          <div>
-            <h5 className="text-sm font-bold mb-3 opacity-90">{"カテゴリ"}</h5>
-            <ul className="flex flex-col gap-2 text-xs opacity-75">
-              <li>
-                <Link href="/" className="hover:opacity-100 transition-opacity">
-                  {"経済"}
-                </Link>
-              </li>
-              <li>
-                <Link href="/" className="hover:opacity-100 transition-opacity">
-                  {"政策"}
-                </Link>
-              </li>
-              <li>
-                <Link href="/" className="hover:opacity-100 transition-opacity">
-                  {"規制"}
-                </Link>
-              </li>
-              <li>
-                <Link href="/" className="hover:opacity-100 transition-opacity">
-                  {"企業動向"}
-                </Link>
-              </li>
-              <li>
-                <Link href="/" className="hover:opacity-100 transition-opacity">
-                  {"スタートアップ"}
-                </Link>
-              </li>
+
+          <div className="space-y-3">
+            <h5 className="text-sm font-semibold uppercase tracking-[0.18em]">
+              Categories
+            </h5>
+            <ul className="space-y-2 text-sm text-primary-foreground/75">
+              {CATEGORY_OPTIONS.map((category) => (
+                <li key={category}>
+                  <Link href="/" className="transition-opacity hover:opacity-100">
+                    {CATEGORY_LABELS[category]}
+                  </Link>
+                </li>
+              ))}
             </ul>
           </div>
-          <div>
-            <h5 className="text-sm font-bold mb-3 opacity-90">{"このサイトについて"}</h5>
-            <ul className="flex flex-col gap-2 text-xs opacity-75">
+
+          <div className="space-y-3">
+            <h5 className="text-sm font-semibold uppercase tracking-[0.18em]">
+              Navigation
+            </h5>
+            <ul className="space-y-2 text-sm text-primary-foreground/75">
               <li>
-                <Link href="/" className="hover:opacity-100 transition-opacity">
-                  {"運営者情報"}
+                <Link href="/pricing#free-member" className="transition-opacity hover:opacity-100">
+                  無料会員登録
                 </Link>
               </li>
               <li>
-                <Link href="/" className="hover:opacity-100 transition-opacity">
-                  {"プライバシーポリシー"}
+                <Link href="/pricing" className="transition-opacity hover:opacity-100">
+                  料金プラン
                 </Link>
               </li>
               <li>
-                <Link href="/" className="hover:opacity-100 transition-opacity">
-                  {"お問い合わせ"}
+                <Link href="/contact?leadType=expansion" className="transition-opacity hover:opacity-100">
+                  お問い合わせ
                 </Link>
               </li>
             </ul>
           </div>
         </div>
-        <Separator className="my-8 opacity-20" />
-        <p className="text-center text-xs opacity-60">
-          &copy; {new Date().getFullYear()} India Business Dispatch. All rights
-          reserved.
+
+        <Separator className="my-8 bg-primary-foreground/15" />
+
+        <p className="text-center text-xs text-primary-foreground/60">
+          &copy; {new Date().getFullYear()} India Business Dispatch. All rights reserved.
         </p>
       </div>
     </footer>

@@ -4,10 +4,10 @@ import Link from "next/link"
 import { Separator } from "@/components/ui/separator"
 import { TrendingUp, Bookmark } from "lucide-react"
 import { CATEGORY_LABELS } from "@/lib/news-data"
-import { useArticles } from "@/lib/article-store"
+import { usePublicArticles } from "@/lib/article-store"
 
 export function TrendingWidget() {
-  const allArticles = useArticles()
+  const allArticles = usePublicArticles()
   const trending = allArticles.filter((a) => a.category !== "column").slice(
     0,
     5
@@ -42,7 +42,7 @@ export function TrendingWidget() {
 }
 
 export function CategoryWidget() {
-  const allArticles = useArticles()
+  const allArticles = usePublicArticles()
   const categoryCounts = allArticles.reduce(
     (acc, article) => {
       acc[article.category] = (acc[article.category] || 0) + 1
@@ -81,7 +81,7 @@ export function AboutWidget() {
   return (
     <div className="bg-secondary rounded-lg p-2.5 border border-border/50">
       <p className="text-xs leading-relaxed text-secondary-foreground opacity-80">
-        {"India Business Dispatch: 日本企業向けインドビジネス情報プラットフォーム"}
+        {"India Business Dispatch: 日本企業向けインド市場インテリジェンス"}
       </p>
     </div>
   )

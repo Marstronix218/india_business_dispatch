@@ -13,6 +13,7 @@ import {
   type NewsArticle,
 } from "@/lib/news-data"
 import { resolveArticleImageUrl } from "@/lib/image-utils"
+import { resolveSourceArticleUrl } from "@/lib/source-url-utils"
 
 function ArticleMeta({ article }: { article: NewsArticle }) {
   return (
@@ -70,6 +71,8 @@ function ArticleContent({
   summaryClassName: string
   showMarketSnapshot?: boolean
 }) {
+  const sourceArticleUrl = resolveSourceArticleUrl(article.sourceUrl, article.title)
+
   return (
     <div className="min-w-0 space-y-1.5">
       <ArticleMeta article={article} />
@@ -80,7 +83,19 @@ function ArticleContent({
       {showMarketSnapshot && article.marketSnapshot && (
         <MarketSnapshotRow snapshot={article.marketSnapshot} />
       )}
-      <p className="text-xs text-muted-foreground">出典: {article.source}</p>
+      {sourceArticleUrl ? (
+        <a
+          href={sourceArticleUrl}
+          target="_blank"
+          rel="noopener noreferrer"
+          onClick={(event) => event.stopPropagation()}
+          className="w-fit text-xs text-muted-foreground underline-offset-4 hover:text-foreground hover:underline"
+        >
+          出典: {article.source}
+        </a>
+      ) : (
+        <p className="text-xs text-muted-foreground">出典: {article.source}</p>
+      )}
     </div>
   )
 }

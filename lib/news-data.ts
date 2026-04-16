@@ -242,7 +242,7 @@ export const NEWS_ARTICLES: NewsArticle[] = [
     summary:
       "ムンバイ周辺港湾の混雑が足元でやや緩和し、西部工業地帯からの完成車・部品輸送に改善の兆しが出ている。とくにナバシェバ周辺では通関と内陸配送の滞留が縮まり、物流各社は内陸倉庫の再配置やクロスドック機能の増強を急いでいる。日系自動車関連企業では、これまで港湾遅延を前提に厚めに積んでいた在庫を見直し、販売計画に合わせた補充頻度へ戻す動きが出始めた。ただし改善は西部中心で、北部や内陸奥地向けの配送は依然として道路事情の差が大きい。調達と販売の両面で、拠点別のリードタイムを再計測して運用を更新する必要がある。",
     source: "Logistics Insider API",
-    sourceUrl: "https://www.logisticsinsider.in/",
+    sourceUrl: "https://www.logisticsinsider.in/10-minutes-to-melt-can-quick-commerce-keep-its-cool/",
     publishedAt: "2026-04-14",
     category: "economy",
     industryTags: ["automotive", "logistics"],

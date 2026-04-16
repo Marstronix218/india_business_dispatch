@@ -19,6 +19,7 @@ import {
 } from "@/lib/news-data"
 import { ensureMinimumSummaryLength } from "@/lib/summary-utils"
 import { resolveArticleImageUrl } from "@/lib/image-utils"
+import { resolveSourceArticleUrl } from "@/lib/source-url-utils"
 
 export function ArticleView({ id }: { id: string }) {
   const articles = usePublicArticles()
@@ -44,6 +45,7 @@ export function ArticleView({ id }: { id: string }) {
     .slice(0, 3)
   const detailedSummary = ensureMinimumSummaryLength(article.summary, 500)
   const imageSrc = resolveArticleImageUrl(article.imageUrl, article.id)
+  const sourceArticleUrl = resolveSourceArticleUrl(article.sourceUrl, article.title)
 
   const leadType = article.industryTags.includes("talent") ? "hiring" : "expansion"
 
@@ -91,9 +93,9 @@ export function ArticleView({ id }: { id: string }) {
                 <div className="flex flex-wrap items-center gap-4 text-sm text-muted-foreground">
                   <span>{formatArticleDate(article.publishedAt)}</span>
                   <span>出典: {article.source}</span>
-                  {article.sourceUrl && (
+                  {sourceArticleUrl && (
                     <a
-                      href={article.sourceUrl}
+                      href={sourceArticleUrl}
                       target="_blank"
                       rel="noopener noreferrer"
                       className="inline-flex items-center gap-1 text-accent hover:underline"

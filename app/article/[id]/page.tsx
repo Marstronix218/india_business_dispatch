@@ -1,8 +1,8 @@
-import { NEWS_ARTICLES } from "@/lib/news-data"
+import { getPublicSeedArticles } from "@/lib/news-data"
 import { ArticleView } from "@/components/article-view"
 
 export function generateStaticParams() {
-  return NEWS_ARTICLES.map((article) => ({
+  return getPublicSeedArticles().map((article) => ({
     id: article.id,
   }))
 }
@@ -13,7 +13,7 @@ export async function generateMetadata({
   params: Promise<{ id: string }>
 }) {
   const { id } = await params
-  const article = NEWS_ARTICLES.find((a) => a.id === id)
+  const article = getPublicSeedArticles().find((a) => a.id === id)
   if (!article) return { title: "記事が見つかりません | India Business Dispatch" }
 
   return {

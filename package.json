@@ -6,7 +6,9 @@
     "dev": "next dev",
     "build": "next build",
     "start": "next start",
-    "lint": "eslint ."
+    "lint": "eslint .",
+    "scrape:fetch": "python3 scripts/python/fetch_india_news.py --limit 10",
+    "scrape:run": "python3 scripts/python/push_to_pipeline.py --api-url http://localhost:3000/api/scrape/run --limit 10"
   },
   "dependencies": {
     "@hookform/resolvers": "^3.9.1",

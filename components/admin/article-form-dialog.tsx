@@ -1,6 +1,6 @@
 "use client"
 
-import { useState, useEffect } from "react"
+import { useEffect, useState } from "react"
 import {
   Dialog,
   DialogContent,
@@ -9,10 +9,9 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog"
 import { Button } from "@/components/ui/button"
+import { Checkbox } from "@/components/ui/checkbox"
 import { Input } from "@/components/ui/input"
-import { Textarea } from "@/components/ui/textarea"
 import { Label } from "@/components/ui/label"
-import { Switch } from "@/components/ui/switch"
 import {
   Select,
   SelectContent,
@@ -20,13 +19,33 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select"
-import { CATEGORY_LABELS, type Category } from "@/lib/news-data"
+import { Textarea } from "@/components/ui/textarea"
 import {
   addArticle,
-  updateArticle,
   getArticleById,
+  updateArticle,
   useNextId,
 } from "@/lib/article-store"
+import {
+  CATEGORY_LABELS,
+  CATEGORY_OPTIONS,
+  CONTENT_TYPE_LABELS,
+  CONTENT_TYPE_OPTIONS,
+  DEFAULT_MARKET_SNAPSHOT,
+  INDUSTRY_LABELS,
+  INDUSTRY_OPTIONS,
+  MARKET_METRIC_ORDER,
+  VISIBILITY_LABELS,
+  VISIBILITY_OPTIONS,
+  WORKFLOW_STATUS_LABELS,
+  WORKFLOW_STATUS_OPTIONS,
+  type Category,
+  type ContentType,
+  type IndustryTag,
+  type MarketSnapshot,
+  type Visibility,
+  type WorkflowStatus,
+} from "@/lib/news-data"
 import { toast } from "sonner"
 
 interface ArticleFormDialogProps {
@@ -35,17 +54,38 @@ interface ArticleFormDialogProps {
   editingId: string | null
 }
 
-const EMPTY_FORM = {
+interface ArticleFormState {
+  title: string
+  summary: string
+  source: string
+  sourceUrl: string
+  publishedAt: string
+  category: Category
+  industryTags: IndustryTag[]
+  implicationsText: string
+  contentType: ContentType
+  visibility: Visibility
+  workflowStatus: WorkflowStatus
+  imageUrl: string
+  featured: boolean
+  marketSnapshot: MarketSnapshot
+}
+
+const EMPTY_FORM: ArticleFormState = {
   title: "",
   summary: "",
-  category: "economy" as Category,
-  date: new Date().toISOString().slice(0, 10),
   source: "",
   sourceUrl: "",
+  publishedAt: new Date().toISOString().slice(0, 10),
+  category: "economy",
+  industryTags: [],
+  implicationsText: "",
+  contentType: "news",
+  visibility: "public",
+  workflowStatus: "published",
   imageUrl: "",
-  body: "",
-  interpretation: "",
-  isBreaking: false,
+  featured: false,
+  marketSnapshot: DEFAULT_MARKET_SNAPSHOT,
 }
 
 export function ArticleFormDialog({
@@ -53,61 +93,114 @@ export function ArticleFormDialog({
   onOpenChange,
   editingId,
 }: ArticleFormDialogProps) {
-  const [form, setForm] = useState(EMPTY_FORM)
+  const [form, setForm] = useState<ArticleFormState>(EMPTY_FORM)
   const getNextId = useNextId()
-
   const isEditing = editingId !== null
 
   useEffect(() => {
-    if (open && editingId) {
-      const article = getArticleById(editingId)
-      if (article) {
-        setForm({
-          title: article.title,
-          summary: article.summary,
-          category: article.category,
-          date: article.date,
-          source: article.source,
-          sourceUrl: article.sourceUrl || "",
-          imageUrl: article.imageUrl || "",
-          body: article.body,
-          interpretation: article.interpretation || "",
-          isBreaking: article.isBreaking || false,
-        })
-      }
-    } else if (open && !editingId) {
+    if (!open) return
+
+    if (!editingId) {
       setForm({
         ...EMPTY_FORM,
-        date: new Date().toISOString().slice(0, 10),
+        publishedAt: new Date().toISOString().slice(0, 10),
+        marketSnapshot: DEFAULT_MARKET_SNAPSHOT,
       })
-    }
-  }, [open, editingId])
-
-  function handleSubmit(e: React.FormEvent) {
-    e.preventDefault()
-
-    if (!form.title.trim() || !form.summary.trim() || !form.body.trim()) {
-      toast.error("タイトル、要約、本文は必須です")
       return
     }
 
-    if (isEditing && editingId) {
-      updateArticle(editingId, {
-        ...form,
-        sourceUrl: form.sourceUrl || undefined,
-        imageUrl: form.imageUrl || undefined,
-        interpretation: form.interpretation || undefined,
-      })
-      toast.success("記事を更新しました")
+    const article = getArticleById(editingId)
+    if (!article) return
+
+    setForm({
+      title: article.title,
+      summary: article.summary,
+      source: article.source,
+      sourceUrl: article.sourceUrl ?? "",
+      publishedAt: article.publishedAt,
+      category: article.category,
+      industryTags: article.industryTags,
+      implicationsText: article.implications.join("\n"),
+      contentType: article.contentType,
+      visibility: article.visibility,
+      workflowStatus: article.workflowStatus,
+      imageUrl: article.imageUrl ?? "",
+      featured: article.featured ?? false,
+      marketSnapshot: article.marketSnapshot ?? DEFAULT_MARKET_SNAPSHOT,
+    })
+  }, [editingId, open])
+
+  function toggleIndustry(tag: IndustryTag) {
+    setForm((current) => ({
+      ...current,
+      industryTags: current.industryTags.includes(tag)
+        ? current.industryTags.filter((item) => item !== tag)
+        : [...current.industryTags, tag],
+    }))
+  }
+
+  function updateMarketField(
+    key: keyof MarketSnapshot,
+    field: keyof MarketSnapshot[keyof MarketSnapshot],
+    value: string,
+  ) {
+    setForm((current) => ({
+      ...current,
+      marketSnapshot: {
+        ...current.marketSnapshot,
+        [key]: {
+          ...current.marketSnapshot[key],
+          [field]: value,
+        },
+      },
+    }))
+  }
+
+  function handleSubmit(event: React.FormEvent<HTMLFormElement>) {
+    event.preventDefault()
+
+    const implications = form.implicationsText
+      .split("\n")
+      .map((item) => item.trim())
+      .filter(Boolean)
+
+    if (
+      !form.title.trim() ||
+      !form.summary.trim() ||
+      !form.source.trim() ||
+      implications.length === 0
+    ) {
+      toast.error("タイトル、要約、出典、示唆は必須です。")
+      return
+    }
+
+    const payload = {
+      title: form.title.trim(),
+      summary: form.summary.trim(),
+      source: form.source.trim(),
+      sourceUrl: form.sourceUrl.trim() || undefined,
+      publishedAt: form.publishedAt,
+      category: form.category,
+      industryTags: form.industryTags,
+      implications,
+      contentType: form.contentType,
+      visibility: form.visibility,
+      workflowStatus: form.workflowStatus,
+      imageUrl: form.imageUrl.trim() || undefined,
+      featured: form.featured,
+      marketSnapshot:
+        form.category === "market" ? form.marketSnapshot : undefined,
+    }
+
+    if (editingId) {
+      updateArticle(editingId, payload)
+      toast.success("記事を更新しました。")
     } else {
       addArticle({
-        ...form,
         id: getNextId(),
-        sourceUrl: form.sourceUrl || undefined,
-        imageUrl: form.imageUrl || undefined,
-        interpretation: form.interpretation || undefined,
+        ...payload,
       })
-      toast.success("記事を作成しました")
+      toast.success("記事を追加しました。")
     }
 
     onOpenChange(false)
@@ -115,174 +208,330 @@ export function ArticleFormDialog({
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto bg-card">
+      <DialogContent className="max-h-[90vh] max-w-4xl overflow-y-auto bg-card">
         <DialogHeader>
-          <DialogTitle className="text-foreground">
-            {isEditing ? "記事を編集" : "新規記事を作成"}
-          </DialogTitle>
+          <DialogTitle>{isEditing ? "記事を編集" : "記事を追加"}</DialogTitle>
           <DialogDescription>
-            {isEditing
-              ? "記事の内容を編集して更新してください。"
-              : "新しい記事の情報を入力して公開してください。"}
+            500字要約と、必要に応じて為替・市況4指標を管理します。
           </DialogDescription>
         </DialogHeader>
 
-        <form onSubmit={handleSubmit} className="flex flex-col gap-5 mt-2">
-          {/* Title */}
-          <div className="flex flex-col gap-1.5">
-            <Label htmlFor="title">
-              {"タイトル"}
-              <span className="text-destructive ml-1">*</span>
-            </Label>
+        <form onSubmit={handleSubmit} className="space-y-5">
+          <div className="space-y-2">
+            <Label htmlFor="title">タイトル</Label>
             <Input
               id="title"
               value={form.title}
-              onChange={(e) => setForm({ ...form, title: e.target.value })}
-              placeholder="記事のタイトルを入力..."
+              onChange={(event) =>
+                setForm((current) => ({
+                  ...current,
+                  title: event.target.value,
+                }))
+              }
+              placeholder="記事タイトルを入力"
             />
           </div>
 
-          {/* Summary */}
-          <div className="flex flex-col gap-1.5">
-            <Label htmlFor="summary">
-              {"要約"}
-              <span className="text-destructive ml-1">*</span>
-            </Label>
+          <div className="space-y-2">
+            <Label htmlFor="summary">要約</Label>
             <Textarea
               id="summary"
               value={form.summary}
-              onChange={(e) => setForm({ ...form, summary: e.target.value })}
-              placeholder="1-2行の記事要約..."
-              className="min-h-20"
+              onChange={(event) =>
+                setForm((current) => ({
+                  ...current,
+                  summary: event.target.value,
+                }))
+              }
+              placeholder="約500字の要約を入力"
+              className="min-h-44"
             />
           </div>
 
-          {/* Category + Date row */}
-          <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
-            <div className="flex flex-col gap-1.5">
-              <Label>{"カテゴリ"}</Label>
-              <Select
-                value={form.category}
-                onValueChange={(v) =>
-                  setForm({ ...form, category: v as Category })
-                }
-              >
-                <SelectTrigger className="w-full">
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
-                  {(Object.keys(CATEGORY_LABELS) as Category[]).map((cat) => (
-                    <SelectItem key={cat} value={cat}>
-                      {CATEGORY_LABELS[cat]}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </div>
-            <div className="flex flex-col gap-1.5">
-              <Label htmlFor="date">{"公開日"}</Label>
-              <Input
-                id="date"
-                type="date"
-                value={form.date}
-                onChange={(e) => setForm({ ...form, date: e.target.value })}
-              />
-            </div>
-          </div>
-
-          {/* Source + Source URL row */}
-          <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
-            <div className="flex flex-col gap-1.5">
-              <Label htmlFor="source">{"出典名"}</Label>
+          <div className="grid gap-4 md:grid-cols-2">
+            <div className="space-y-2">
+              <Label htmlFor="source">出典名</Label>
               <Input
                 id="source"
                 value={form.source}
-                onChange={(e) => setForm({ ...form, source: e.target.value })}
-                placeholder="例: Reuters, 編集部"
+                onChange={(event) =>
+                  setForm((current) => ({
+                    ...current,
+                    source: event.target.value,
+                  }))
+                }
+                placeholder="Reuters / 編集部寄稿 など"
               />
             </div>
-            <div className="flex flex-col gap-1.5">
-              <Label htmlFor="sourceUrl">{"出典URL"}</Label>
+            <div className="space-y-2">
+              <Label htmlFor="sourceUrl">出典 URL</Label>
               <Input
                 id="sourceUrl"
                 type="url"
                 value={form.sourceUrl}
-                onChange={(e) => setForm({ ...form, sourceUrl: e.target.value })}
+                onChange={(event) =>
+                  setForm((current) => ({
+                    ...current,
+                    sourceUrl: event.target.value,
+                  }))
+                }
                 placeholder="https://..."
               />
             </div>
           </div>
 
-          {/* Image URL */}
-          <div className="flex flex-col gap-1.5">
-            <Label htmlFor="imageUrl">{"画像URL"}</Label>
-            <Input
-              id="imageUrl"
-              type="url"
-              value={form.imageUrl}
-              onChange={(e) => setForm({ ...form, imageUrl: e.target.value })}
-              placeholder="/images/article-1.jpg または https://..."
-            />
+          <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
+            <div className="space-y-2">
+              <Label>カテゴリ</Label>
+              <Select
+                value={form.category}
+                onValueChange={(value) =>
+                  setForm((current) => ({
+                    ...current,
+                    category: value as Category,
+                  }))
+                }
+              >
+                <SelectTrigger>
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  {CATEGORY_OPTIONS.map((category) => (
+                    <SelectItem key={category} value={category}>
+                      {CATEGORY_LABELS[category]}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+
+            <div className="space-y-2">
+              <Label>種別</Label>
+              <Select
+                value={form.contentType}
+                onValueChange={(value) =>
+                  setForm((current) => ({
+                    ...current,
+                    contentType: value as ContentType,
+                  }))
+                }
+              >
+                <SelectTrigger>
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  {CONTENT_TYPE_OPTIONS.map((contentType) => (
+                    <SelectItem key={contentType} value={contentType}>
+                      {CONTENT_TYPE_LABELS[contentType]}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+
+            <div className="space-y-2">
+              <Label>公開範囲</Label>
+              <Select
+                value={form.visibility}
+                onValueChange={(value) =>
+                  setForm((current) => ({
+                    ...current,
+                    visibility: value as Visibility,
+                  }))
+                }
+              >
+                <SelectTrigger>
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  {VISIBILITY_OPTIONS.map((visibility) => (
+                    <SelectItem key={visibility} value={visibility}>
+                      {VISIBILITY_LABELS[visibility]}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+
+            <div className="space-y-2">
+              <Label>ワークフロー状態</Label>
+              <Select
+                value={form.workflowStatus}
+                onValueChange={(value) =>
+                  setForm((current) => ({
+                    ...current,
+                    workflowStatus: value as WorkflowStatus,
+                  }))
+                }
+              >
+                <SelectTrigger>
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  {WORKFLOW_STATUS_OPTIONS.map((status) => (
+                    <SelectItem key={status} value={status}>
+                      {WORKFLOW_STATUS_LABELS[status]}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+          </div>
+
+          <div className="grid gap-4 md:grid-cols-2">
+            <div className="space-y-2">
+              <Label htmlFor="publishedAt">公開日</Label>
+              <Input
+                id="publishedAt"
+                type="date"
+                value={form.publishedAt}
+                onChange={(event) =>
+                  setForm((current) => ({
+                    ...current,
+                    publishedAt: event.target.value,
+                  }))
+                }
+              />
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="imageUrl">画像 URL</Label>
+              <Input
+                id="imageUrl"
+                type="url"
+                value={form.imageUrl}
+                onChange={(event) =>
+                  setForm((current) => ({
+                    ...current,
+                    imageUrl: event.target.value,
+                  }))
+                }
+                placeholder="/images/article-1.jpg"
+              />
+            </div>
+          </div>
+
+          <div className="space-y-3">
+            <Label>業界タグ</Label>
+            <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
+              {INDUSTRY_OPTIONS.map((tag) => (
+                <label
+                  key={tag}
+                  className="flex items-center gap-3 rounded-2xl border border-border px-3 py-2 text-sm"
+                >
+                  <Checkbox
+                    checked={form.industryTags.includes(tag)}
+                    onCheckedChange={() => toggleIndustry(tag)}
+                  />
+                  <span>{INDUSTRY_LABELS[tag]}</span>
+                </label>
+              ))}
+            </div>
             <p className="text-xs text-muted-foreground">
-              {"記事のサムネイル画像URLを入力してください（任意）"}
+              補助タグとして使います。為替・市況の記事では空でも保存できます。
             </p>
           </div>
 
-          {/* Body */}
-          <div className="flex flex-col gap-1.5">
-            <Label htmlFor="body">
-              {"本文"}
-              <span className="text-destructive ml-1">*</span>
-            </Label>
-            <Textarea
-              id="body"
-              value={form.body}
-              onChange={(e) => setForm({ ...form, body: e.target.value })}
-              placeholder="段落は空行で区切ってください..."
-              className="min-h-40"
-            />
-          </div>
+          {form.category === "market" && (
+            <div className="space-y-4 rounded-3xl border border-border bg-secondary/20 p-4">
+              <div className="space-y-1">
+                <p className="text-sm font-medium text-foreground">為替・市況4指標</p>
+                <p className="text-xs text-muted-foreground">
+                  為替・株式・金利・原油の順で表示します。
+                </p>
+              </div>
+              {MARKET_METRIC_ORDER.map((key) => {
+                const metric = form.marketSnapshot[key]
+                return (
+                  <div key={key} className="grid gap-3 md:grid-cols-5">
+                    <div className="space-y-2">
+                      <Label>{metric.label} 表示名</Label>
+                      <Input
+                        value={metric.label}
+                        onChange={(event) =>
+                          updateMarketField(key, "label", event.target.value)
+                        }
+                      />
+                    </div>
+                    <div className="space-y-2">
+                      <Label>値</Label>
+                      <Input
+                        value={metric.value}
+                        onChange={(event) =>
+                          updateMarketField(key, "value", event.target.value)
+                        }
+                      />
+                    </div>
+                    <div className="space-y-2">
+                      <Label>変化</Label>
+                      <Input
+                        value={metric.change}
+                        onChange={(event) =>
+                          updateMarketField(key, "change", event.target.value)
+                        }
+                      />
+                    </div>
+                    <div className="space-y-2">
+                      <Label>単位</Label>
+                      <Input
+                        value={metric.unit}
+                        onChange={(event) =>
+                          updateMarketField(key, "unit", event.target.value)
+                        }
+                      />
+                    </div>
+                    <div className="space-y-2">
+                      <Label>更新時刻</Label>
+                      <Input
+                        value={metric.asOf}
+                        onChange={(event) =>
+                          updateMarketField(key, "asOf", event.target.value)
+                        }
+                      />
+                    </div>
+                  </div>
+                )
+              })}
+            </div>
+          )}
 
-          {/* Interpretation */}
-          <div className="flex flex-col gap-1.5">
-            <Label htmlFor="interpretation">
-              {"日本企業への示唆（任意）"}
-            </Label>
+          <div className="space-y-2">
+            <Label htmlFor="implicationsText">日本企業への示唆</Label>
             <Textarea
-              id="interpretation"
-              value={form.interpretation}
-              onChange={(e) =>
-                setForm({ ...form, interpretation: e.target.value })
+              id="implicationsText"
+              value={form.implicationsText}
+              onChange={(event) =>
+                setForm((current) => ({
+                  ...current,
+                  implicationsText: event.target.value,
+                }))
               }
-              placeholder="この記事が日本企業にどう影響するか..."
-              className="min-h-20"
+              placeholder={"1行につき1つの示唆を入力\n勝機あり: ...\n注意点: ..."}
+              className="min-h-32"
             />
           </div>
 
-          {/* Breaking toggle */}
-          <div className="flex items-center gap-3">
-            <Switch
-              id="isBreaking"
-              checked={form.isBreaking}
+          <label className="flex items-center gap-3 rounded-2xl border border-border px-4 py-3 text-sm">
+            <Checkbox
+              checked={form.featured}
               onCheckedChange={(checked) =>
-                setForm({ ...form, isBreaking: checked })
+                setForm((current) => ({
+                  ...current,
+                  featured: checked === true,
+                }))
               }
             />
-            <Label htmlFor="isBreaking">{"速報としてマークする"}</Label>
-          </div>
+            <span>トップの注目記事として表示する</span>
+          </label>
 
-          {/* Actions */}
-          <div className="flex items-center justify-end gap-3 pt-2">
+          <div className="flex justify-end gap-2">
             <Button
               type="button"
               variant="outline"
               onClick={() => onOpenChange(false)}
             >
-              {"キャンセル"}
+              キャンセル
             </Button>
-            <Button type="submit">
-              {isEditing ? "更新する" : "公開する"}
-            </Button>
+            <Button type="submit">{isEditing ? "更新する" : "追加する"}</Button>
           </div>
         </form>
       </DialogContent>

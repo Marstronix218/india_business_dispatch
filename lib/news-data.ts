@@ -38,6 +38,17 @@ export interface MarketSnapshot {
   oil: MarketMetric
 }
 
+export interface SourceProvenance {
+  originalTitle: string
+  originalUrl: string
+  canonicalUrl?: string
+  originalPublishedAt?: string
+  fetchedAt?: string
+  extractedBy?: string
+  sourceLanguage?: string
+  evidenceSnippets?: string[]
+}
+
 export interface NewsArticle {
   id: string
   title: string
@@ -54,6 +65,7 @@ export interface NewsArticle {
   imageUrl?: string
   featured?: boolean
   marketSnapshot?: MarketSnapshot
+  provenance?: SourceProvenance
 }
 
 export const CATEGORY_LABELS: Record<Category, string> = {

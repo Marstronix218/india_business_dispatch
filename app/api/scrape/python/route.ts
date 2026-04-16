@@ -23,14 +23,22 @@ export async function POST() {
 
     const rawArticles = Array.isArray(payload.rawArticles) ? payload.rawArticles : []
     if (rawArticles.length === 0) {
-      return NextResponse.json(
-        {
-          ok: false,
-          error: "No raw articles from python scraper",
-          fetchErrors: payload.errors ?? [],
+      return NextResponse.json({
+        ok: true,
+        warning: "No raw articles from python scraper",
+        fetchErrors: payload.errors ?? [],
+        summary: {
+          fetched: 0,
+          published: 0,
+          reviewQueue: 0,
+          failed: 0,
         },
-        { status: 502 },
-      )
+        result: {
+          published: [],
+          reviewQueue: [],
+          failed: [],
+        },
+      })
     }
 
     const result = runAutomationPipeline(rawArticles)

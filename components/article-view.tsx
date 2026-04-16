@@ -46,6 +46,7 @@ export function ArticleView({ id }: { id: string }) {
   const detailedSummary = ensureMinimumSummaryLength(article.summary, 500)
   const imageSrc = resolveArticleImageUrl(article.imageUrl, article.id)
   const sourceArticleUrl = resolveSourceArticleUrl(article.sourceUrl, article.title)
+  const evidenceSnippets = article.provenance?.evidenceSnippets ?? []
 
   const leadType = article.industryTags.includes("talent") ? "hiring" : "expansion"
 
@@ -185,6 +186,65 @@ export function ArticleView({ id }: { id: string }) {
                   </li>
                 ))}
               </ul>
+            </section>
+
+            <section className="rounded-3xl border border-border bg-card p-6">
+              <p className="text-sm font-medium uppercase tracking-[0.18em] text-accent">
+                検証情報
+              </p>
+              <div className="mt-4 space-y-3 text-sm leading-7 text-foreground">
+                <p>
+                  <span className="font-medium">原文タイトル:</span>{" "}
+                  {article.provenance?.originalTitle ?? article.title}
+                </p>
+                {article.provenance?.originalPublishedAt && (
+                  <p>
+                    <span className="font-medium">原文公開日:</span>{" "}
+                    {article.provenance.originalPublishedAt}
+                  </p>
+                )}
+                {article.provenance?.fetchedAt && (
+                  <p>
+                    <span className="font-medium">取得時刻:</span>{" "}
+                    {article.provenance.fetchedAt}
+                  </p>
+                )}
+                {article.provenance?.extractedBy && (
+                  <p>
+                    <span className="font-medium">抽出方式:</span>{" "}
+                    {article.provenance.extractedBy}
+                  </p>
+                )}
+                {sourceArticleUrl && (
+                  <p>
+                    <span className="font-medium">原文URL:</span>{" "}
+                    <a
+                      href={sourceArticleUrl}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="text-accent underline-offset-4 hover:underline"
+                    >
+                      {sourceArticleUrl}
+                    </a>
+                  </p>
+                )}
+              </div>
+
+              {evidenceSnippets.length > 0 && (
+                <div className="mt-4 space-y-2">
+                  <p className="text-sm font-medium text-foreground">原文抜粋</p>
+                  <ul className="space-y-2">
+                    {evidenceSnippets.map((snippet, index) => (
+                      <li
+                        key={`${index}-${snippet.slice(0, 20)}`}
+                        className="rounded-2xl border border-border bg-secondary/30 px-4 py-3 text-sm text-muted-foreground"
+                      >
+                        {snippet}
+                      </li>
+                    ))}
+                  </ul>
+                </div>
+              )}
             </section>
 
             {article.industryTags.length > 0 && (

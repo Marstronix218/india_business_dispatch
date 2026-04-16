@@ -107,19 +107,46 @@ export default function AdminPage() {
         method: "POST",
       })
 
-      if (!response.ok) {
-        throw new Error(`HTTP ${response.status}`)
+      const data = (await response.json()) as {
+        ok?: boolean
+        error?: string
+        warning?: string
+        fetchErrors?: Array<{ connectorId?: string; error?: string }>
+        summary?: {
+          fetched?: number
+          published?: number
+          reviewQueue?: number
+          failed?: number
+        }
+        result?: {
+          published?: Array<Record<string, unknown>>
+        }
       }
 
-      const data = await response.json()
+      if (!response.ok) {
+        const serverMessage = data?.error ?? `HTTP ${response.status}`
+        throw new Error(serverMessage)
+      }
+
       if (!data.ok) {
         throw new Error(data.error ?? "スクレイピング実行に失敗しました")
       }
 
-      const imported = importArticles(data.result.published)
+      const published = Array.isArray(data.result?.published)
+        ? (data.result.published as Parameters<typeof importArticles>[0])
+        : []
+      const imported = importArticles(published)
       const errorCount = Array.isArray(data.fetchErrors) ? data.fetchErrors.length : 0
+
+      if ((data.summary?.fetched ?? 0) === 0) {
+        toast.warning(
+          `スクレイピング完了（取得0件）: フィード接続やURL品質判定で除外された可能性があります。取得失敗 ${errorCount}件`,
+        )
+        return
+      }
+
       toast.success(
-        `スクレイピング実行完了: 取得 ${data.summary.fetched}件 / 公開 ${data.summary.published}件 / 追加 ${imported.length}件 / 取得失敗 ${errorCount}件`,
+        `スクレイピング実行完了: 取得 ${data.summary?.fetched ?? 0}件 / 公開 ${data.summary?.published ?? 0}件 / 追加 ${imported.length}件 / 取得失敗 ${errorCount}件`,
       )
     } catch (error) {
       const message =

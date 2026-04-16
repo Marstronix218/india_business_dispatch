@@ -10,6 +10,7 @@ from dataclasses import dataclass
 from datetime import datetime, timezone
 from html import unescape
 from typing import Any
+from urllib.parse import urlparse
 from urllib.request import Request, urlopen
 import xml.etree.ElementTree as ET
 
@@ -55,6 +56,77 @@ def clean_html_text(value: str) -> str:
     return re.sub(r"\s+", " ", plain).strip()
 
 
+def build_evidence_snippets(text: str, max_items: int = 3) -> list[str]:
+    cleaned = clean_html_text(text)
+    if not cleaned:
+        return []
+
+    parts = re.split(r"(?<=[.!?。])\s+", cleaned)
+    snippets: list[str] = []
+
+    for part in parts:
+        snippet = part.strip()
+        if len(snippet) < 40:
+            continue
+        snippets.append(snippet[:220])
+        if len(snippets) >= max_items:
+            break
+
+    return snippets
+
+
+def is_probable_article_url(url: str) -> bool:
+    try:
+        parsed = urlparse(url)
+    except Exception:
+        return False
+
+    if parsed.scheme not in ("http", "https"):
+        return False
+
+    if not parsed.netloc:
+        return False
+
+    path = parsed.path or "/"
+    if path in ("", "/"):
+        return False
+
+    lowered = path.lower()
+    disallowed_tokens = [
+        "/category/",
+        "/tag/",
+        "/author/",
+        "/search",
+        "/topics/",
+        "/topic/",
+        "/contact",
+        "/about",
+        "/feed",
+    ]
+    if any(token in lowered for token in disallowed_tokens):
+        return False
+
+    if lowered.endswith((".jpg", ".jpeg", ".png", ".gif", ".svg", ".css", ".js")):
+        return False
+
+    segments = [segment for segment in path.split("/") if segment]
+    if not segments:
+        return False
+
+    if len(segments) == 1:
+        slug = segments[0]
+        if "-" not in slug or len(slug) < 20:
+            return False
+
+    return True
+
+
+def resolve_final_url(url: str) -> str:
+    request = Request(url, headers={"User-Agent": USER_AGENT})
+    with urlopen(request, timeout=15) as response:
+        return response.geturl()
+
+
 def parse_rfc822_date(value: str) -> str:
     value = value.strip()
     for fmt in (
@@ -88,16 +160,37 @@ def parse_rss(xml_bytes: bytes, connector: Connector, limit: int) -> list[dict[s
         if not title or not link:
             continue
 
+        if not is_probable_article_url(link):
+            continue
+
+        canonical_url = link
+        try:
+            canonical_url = resolve_final_url(link)
+        except Exception:
+            canonical_url = link
+
+        if not is_probable_article_url(canonical_url):
+            continue
+
+        fetched_at = datetime.now(timezone.utc).isoformat()
+
         output.append(
             {
                 "connectorId": connector.connector_id,
                 "externalId": guid,
                 "source": connector.source,
                 "title": title,
-                "url": link,
+                "url": canonical_url,
                 "publishedAt": parse_rfc822_date(pub_date_raw),
                 "bodyText": body if body else title,
                 "imageUrl": f"https://picsum.photos/seed/{abs(hash(title)) % 100000}/1200/675",
+                "originalTitle": title,
+                "originalPublishedAt": parse_rfc822_date(pub_date_raw),
+                "canonicalUrl": canonical_url,
+                "fetchedAt": fetched_at,
+                "extractedBy": "rss-link+description",
+                "sourceLanguage": "en",
+                "evidenceSnippets": build_evidence_snippets(body if body else title),
             }
         )
 
@@ -120,6 +213,11 @@ def main() -> int:
         default="",
         help="optional output file path (defaults to stdout)",
     )
+    parser.add_argument(
+        "--allow-fallback",
+        action="store_true",
+        help="emit synthetic fallback entries when all sources fail",
+    )
     args = parser.parse_args()
 
     all_articles: list[dict[str, Any]] = []
@@ -131,8 +229,9 @@ def main() -> int:
         except Exception as exc:  # pragma: no cover
             errors.append({"connectorId": connector.connector_id, "error": str(exc)})
 
-    if not all_articles:
+    if not all_articles and args.allow_fallback:
         today = datetime.now(timezone.utc).date().isoformat()
+        fetched_at = datetime.now(timezone.utc).isoformat()
         for index, connector in enumerate(CONNECTORS):
             body = FALLBACK_BODIES[index % len(FALLBACK_BODIES)]
             all_articles.append(
@@ -145,6 +244,13 @@ def main() -> int:
                     "publishedAt": today,
                     "bodyText": body,
                     "imageUrl": f"https://picsum.photos/seed/{connector.connector_id}/1200/675",
+                    "originalTitle": f"Fallback India brief from {connector.source}",
+                    "originalPublishedAt": today,
+                    "canonicalUrl": connector.url,
+                    "fetchedAt": fetched_at,
+                    "extractedBy": "synthetic-fallback",
+                    "sourceLanguage": "en",
+                    "evidenceSnippets": build_evidence_snippets(body),
                 }
             )
 

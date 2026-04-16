@@ -3,9 +3,11 @@ import {
   INDUSTRY_LABELS,
   type IndustryTag,
   type NewsArticle,
+  type SourceProvenance,
   normalizeLegacyCategory,
 } from "@/lib/news-data"
 import { cleanText, ensureMinimumSummaryLength } from "@/lib/summary-utils"
+import { isLikelyArticleUrl } from "@/lib/source-url-utils"
 
 export type ConnectorMode = "rss" | "api"
 
@@ -27,6 +29,13 @@ export interface RawSourceArticle {
   publishedAt: string
   bodyText: string
   imageUrl?: string
+  originalTitle?: string
+  originalPublishedAt?: string
+  canonicalUrl?: string
+  fetchedAt?: string
+  extractedBy?: string
+  sourceLanguage?: string
+  evidenceSnippets?: string[]
   legacyCategory?: string
   industryHints?: IndustryTag[]
 }
@@ -132,12 +141,24 @@ function buildDraft(group: RawSourceArticle[]): PipelineDraft {
   const summary = buildSummary(primary.bodyText)
   const category = normalizeLegacyCategory(primary.legacyCategory ?? "economy")
   const industryTags = primary.industryHints ?? []
+  const provenance: SourceProvenance = {
+    originalTitle: primary.originalTitle ?? primary.title,
+    originalUrl: primary.url,
+    canonicalUrl: primary.canonicalUrl,
+    originalPublishedAt: primary.originalPublishedAt ?? primary.publishedAt,
+    fetchedAt: primary.fetchedAt,
+    extractedBy: primary.extractedBy,
+    sourceLanguage: primary.sourceLanguage,
+    evidenceSnippets: primary.evidenceSnippets,
+  }
 
   if (!summary) {
     return {
       dedupeKey: buildDedupeKey(primary.title),
       title: primary.title,
       summary: "",
+      imageUrl: primary.imageUrl,
+      provenance,
       source: primary.source,
       sourceUrl: primary.url,
       publishedAt: primary.publishedAt,
@@ -152,6 +173,27 @@ function buildDraft(group: RawSourceArticle[]): PipelineDraft {
     }
   }
 
+  if (!isLikelyArticleUrl(primary.url)) {
+    return {
+      dedupeKey: buildDedupeKey(primary.title),
+      title: primary.title,
+      summary,
+      imageUrl: primary.imageUrl,
+      provenance,
+      source: primary.source,
+      sourceUrl: primary.url,
+      publishedAt: primary.publishedAt,
+      category,
+      industryTags,
+      implications: [],
+      contentType: "news",
+      visibility: "member",
+      workflowStatus: "failed",
+      originConnectorIds: group.map((item) => item.connectorId),
+      failureReason: "原文URLが記事ページではない",
+    }
+  }
+
   const workflowStatus =
     category === "regulation" && group.length === 1 ? "review" : "published"
 
@@ -160,6 +202,7 @@ function buildDraft(group: RawSourceArticle[]): PipelineDraft {
     title: primary.title,
     summary,
     imageUrl: primary.imageUrl,
+    provenance,
     source: primary.source,
     sourceUrl: primary.url,
     publishedAt: primary.publishedAt,

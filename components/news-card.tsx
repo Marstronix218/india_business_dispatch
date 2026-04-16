@@ -65,11 +65,13 @@ function ArticleContent({
   titleClassName,
   summaryClassName,
   showMarketSnapshot = true,
+  showSourceLink = true,
 }: {
   article: NewsArticle
   titleClassName: string
   summaryClassName: string
   showMarketSnapshot?: boolean
+  showSourceLink?: boolean
 }) {
   const sourceArticleUrl = resolveSourceArticleUrl(article.sourceUrl, article.title)
 
@@ -83,7 +85,7 @@ function ArticleContent({
       {showMarketSnapshot && article.marketSnapshot && (
         <MarketSnapshotRow snapshot={article.marketSnapshot} />
       )}
-      {sourceArticleUrl ? (
+      {sourceArticleUrl && showSourceLink ? (
         <a
           href={sourceArticleUrl}
           target="_blank"
@@ -126,6 +128,7 @@ export function NewsCardFeatured({ article }: { article: NewsArticle }) {
           titleClassName="line-clamp-2 text-lg font-semibold leading-tight text-foreground transition-colors group-hover:text-primary md:text-xl"
           summaryClassName="line-clamp-2 text-sm leading-6 text-muted-foreground"
           showMarketSnapshot={false}
+          showSourceLink={false}
         />
       </div>
     </Link>
@@ -157,6 +160,7 @@ export function NewsCardGridItem({ article }: { article: NewsArticle }) {
           titleClassName="line-clamp-2 text-sm font-semibold leading-snug text-foreground transition-colors group-hover:text-primary"
           summaryClassName="line-clamp-1 text-xs leading-5 text-muted-foreground"
           showMarketSnapshot={false}
+          showSourceLink={false}
         />
       </div>
     </Link>

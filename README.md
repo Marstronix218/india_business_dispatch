@@ -37,7 +37,7 @@
 - `lib/source-url-utils.ts`
   記事URL判定と表示用ソースURL解決のユーティリティ。
 - `scripts/python/fetch_india_news.py`
-  Python スクレイパー本体。RSS取得、最終URL解決、証拠スニペット抽出、provenance 付与を実施。
+  Python スクレイパー本体。複数 RSS + 任意の GNews API 取得、最終URL解決、証拠スニペット抽出、provenance 付与を実施。
 - `app/api/scrape/python/route.ts`
   Python スクレイパー実行エンドポイント。結果を自動化パイプラインに流し込み、`published/review/failed` 件数を返却。
 
@@ -74,9 +74,22 @@ npm run scrape:run
 
 補足:
 
+- 既定コネクタは Reuters / PIB に加えて Google News RSS（Business, Manufacturing, Logistics, Policy）を利用します。
+- `GNEWS_API_KEY` を設定すると、GNews API からの収集も自動で有効化されます。
+- 任意で `GNEWS_QUERY`, `GNEWS_LANG`, `GNEWS_COUNTRY` で取得条件を調整できます。
 - `scripts/python/fetch_india_news.py --allow-fallback` を付けた場合のみ、全ソース失敗時に synthetic fallback を出力します。
 - TypeScript 側パイプラインでも URL 品質ゲートを行うため、Python 側を通過した後でも公開可否が再判定されます。
 - 原文検証のために `provenance.evidenceSnippets` を記事詳細で表示します。
+
+GNews API の設定例:
+
+```bash
+export GNEWS_API_KEY="your_api_key"
+export GNEWS_QUERY="india business OR india economy OR india infrastructure"
+export GNEWS_LANG="en"
+export GNEWS_COUNTRY="in"
+npm run scrape:fetch
+```
 
 ## Notes
 

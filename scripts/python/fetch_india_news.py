@@ -5,12 +5,13 @@ from __future__ import annotations
 
 import argparse
 import json
+import os
 import re
 from dataclasses import dataclass
 from datetime import datetime, timezone
 from html import unescape
 from typing import Any
-from urllib.parse import urlparse
+from urllib.parse import urlencode, urlparse
 from urllib.request import Request, urlopen
 import xml.etree.ElementTree as ET
 
@@ -37,9 +38,36 @@ CONNECTORS = [
         url="https://pib.gov.in/RssMain.aspx?ModId=3&Lang=1&Regid=3",
     ),
     Connector(
-        connector_id="rbi-api",
-        source="RBI Bulletin",
-        url="https://rbi.org.in/scripts/BS_PressReleaseDisplay.aspx",
+        connector_id="google-news-india-business",
+        source="Google News RSS (India Business)",
+        url=(
+            "https://news.google.com/rss/search?"
+            "q=india+business+economy&hl=en-IN&gl=IN&ceid=IN:en"
+        ),
+    ),
+    Connector(
+        connector_id="google-news-india-manufacturing",
+        source="Google News RSS (India Manufacturing)",
+        url=(
+            "https://news.google.com/rss/search?"
+            "q=india+manufacturing+investment&hl=en-IN&gl=IN&ceid=IN:en"
+        ),
+    ),
+    Connector(
+        connector_id="google-news-india-logistics",
+        source="Google News RSS (India Logistics)",
+        url=(
+            "https://news.google.com/rss/search?"
+            "q=india+logistics+infrastructure&hl=en-IN&gl=IN&ceid=IN:en"
+        ),
+    ),
+    Connector(
+        connector_id="google-news-india-policy",
+        source="Google News RSS (India Policy)",
+        url=(
+            "https://news.google.com/rss/search?"
+            "q=india+policy+regulation+business&hl=en-IN&gl=IN&ceid=IN:en"
+        ),
     ),
 ]
 
@@ -85,6 +113,13 @@ def is_probable_article_url(url: str) -> bool:
         return False
 
     if not parsed.netloc:
+        return False
+
+    blocked_hosts = {
+        "news.google.com",
+        "www.news.google.com",
+    }
+    if parsed.netloc.lower() in blocked_hosts:
         return False
 
     path = parsed.path or "/"
@@ -204,6 +239,89 @@ def fetch_feed(connector: Connector, limit: int) -> list[dict[str, Any]]:
     return parse_rss(content, connector, limit)
 
 
+def fetch_gnews_api(limit: int) -> tuple[list[dict[str, Any]], str | None]:
+    api_key = os.getenv("GNEWS_API_KEY", "").strip()
+    if not api_key:
+        return [], "skipped: set GNEWS_API_KEY to enable gnews connector"
+
+    query = os.getenv(
+        "GNEWS_QUERY",
+        "india business OR india economy OR india infrastructure OR india regulation",
+    )
+    lang = os.getenv("GNEWS_LANG", "en")
+    country = os.getenv("GNEWS_COUNTRY", "in")
+
+    params = urlencode(
+        {
+            "q": query,
+            "lang": lang,
+            "country": country,
+            "max": min(max(limit, 1), 50),
+            "apikey": api_key,
+        }
+    )
+    endpoint = f"https://gnews.io/api/v4/search?{params}"
+
+    request = Request(endpoint, headers={"User-Agent": USER_AGENT})
+    with urlopen(request, timeout=20) as response:
+        payload = json.loads(response.read().decode("utf-8"))
+
+    rows = payload.get("articles") or []
+    output: list[dict[str, Any]] = []
+
+    for row in rows:
+        title = (row.get("title") or "").strip()
+        link = (row.get("url") or "").strip()
+        published_raw = (row.get("publishedAt") or "").strip()
+        source_name = (row.get("source") or {}).get("name") or "GNews"
+        description = clean_html_text((row.get("description") or "").strip())
+        content = clean_html_text((row.get("content") or "").strip())
+        body = " ".join(part for part in [description, content] if part).strip()
+
+        if not title or not link:
+            continue
+
+        if not is_probable_article_url(link):
+            continue
+
+        canonical_url = link
+        try:
+            canonical_url = resolve_final_url(link)
+        except Exception:
+            canonical_url = link
+
+        if not is_probable_article_url(canonical_url):
+            continue
+
+        published_at = parse_rfc822_date(published_raw)
+        fetched_at = datetime.now(timezone.utc).isoformat()
+
+        output.append(
+            {
+                "connectorId": "gnews-api",
+                "externalId": canonical_url,
+                "source": source_name,
+                "title": title,
+                "url": canonical_url,
+                "publishedAt": published_at,
+                "bodyText": body if body else title,
+                "imageUrl": (
+                    row.get("image")
+                    or f"https://picsum.photos/seed/{abs(hash(title)) % 100000}/1200/675"
+                ),
+                "originalTitle": title,
+                "originalPublishedAt": published_at,
+                "canonicalUrl": canonical_url,
+                "fetchedAt": fetched_at,
+                "extractedBy": "gnews-api+url-resolve",
+                "sourceLanguage": lang,
+                "evidenceSnippets": build_evidence_snippets(body if body else title),
+            }
+        )
+
+    return output, None
+
+
 def main() -> int:
     parser = argparse.ArgumentParser(description="Fetch India business feeds")
     parser.add_argument("--limit", type=int, default=10, help="max items per feed")
@@ -228,6 +346,14 @@ def main() -> int:
             all_articles.extend(fetch_feed(connector, args.limit))
         except Exception as exc:  # pragma: no cover
             errors.append({"connectorId": connector.connector_id, "error": str(exc)})
+
+    try:
+        gnews_articles, gnews_error = fetch_gnews_api(args.limit)
+        all_articles.extend(gnews_articles)
+        if gnews_error:
+            errors.append({"connectorId": "gnews-api", "error": gnews_error})
+    except Exception as exc:  # pragma: no cover
+        errors.append({"connectorId": "gnews-api", "error": str(exc)})
 
     if not all_articles and args.allow_fallback:
         today = datetime.now(timezone.utc).date().isoformat()

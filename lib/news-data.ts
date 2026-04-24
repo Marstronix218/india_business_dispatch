@@ -47,6 +47,7 @@ export interface SourceProvenance {
   extractedBy?: string
   sourceLanguage?: string
   evidenceSnippets?: string[]
+  sourceName?: string
 }
 
 export interface NewsArticle {
@@ -66,6 +67,16 @@ export interface NewsArticle {
   featured?: boolean
   marketSnapshot?: MarketSnapshot
   provenance?: SourceProvenance
+  sources?: SourceProvenance[]
+  isSynthesized?: boolean
+}
+
+export function getAllSources(article: NewsArticle): SourceProvenance[] {
+  if (article.sources && article.sources.length > 0) return article.sources
+  if (article.provenance) {
+    return [{ ...article.provenance, sourceName: article.provenance.sourceName ?? article.source }]
+  }
+  return []
 }
 
 export const CATEGORY_LABELS: Record<Category, string> = {

@@ -41,7 +41,7 @@ export async function POST() {
       })
     }
 
-    const result = runAutomationPipeline(rawArticles)
+    const result = await runAutomationPipeline(rawArticles)
 
     return NextResponse.json({
       ok: true,

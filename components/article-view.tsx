@@ -16,6 +16,7 @@ import {
   MARKET_METRIC_ORDER,
   VISIBILITY_LABELS,
   formatArticleDate,
+  getAllSources,
 } from "@/lib/news-data"
 import { ensureMinimumSummaryLength } from "@/lib/summary-utils"
 import { resolveArticleImageUrl } from "@/lib/image-utils"
@@ -46,7 +47,7 @@ export function ArticleView({ id }: { id: string }) {
   const detailedSummary = ensureMinimumSummaryLength(article.summary, 500)
   const imageSrc = resolveArticleImageUrl(article.imageUrl, article.id)
   const sourceArticleUrl = resolveSourceArticleUrl(article.sourceUrl, article.title)
-  const evidenceSnippets = article.provenance?.evidenceSnippets ?? []
+  const allSources = getAllSources(article)
 
   const leadType = article.industryTags.includes("talent") ? "hiring" : "expansion"
 
@@ -91,21 +92,46 @@ export function ArticleView({ id }: { id: string }) {
                 <h1 className="text-4xl font-semibold leading-tight tracking-tight text-foreground">
                   {article.title}
                 </h1>
-                <div className="flex flex-wrap items-center gap-4 text-sm text-muted-foreground">
+                <div className="flex flex-wrap items-center gap-3 text-sm text-muted-foreground">
                   <span>{formatArticleDate(article.publishedAt)}</span>
-                  <span>出典: {article.source}</span>
-                  {sourceArticleUrl && (
-                    <a
-                      href={sourceArticleUrl}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      className="inline-flex items-center gap-1 text-accent hover:underline"
-                    >
-                      原文リンク
-                      <ExternalLink className="size-4" />
-                    </a>
+                  {allSources.length > 0 ? (
+                    <div className="flex flex-wrap items-center gap-2">
+                      <span>出典:</span>
+                      {allSources.map((s, i) => (
+                        <a
+                          key={`${i}-${s.originalUrl}`}
+                          href={s.originalUrl}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="inline-flex items-center gap-1 rounded-full border border-border px-2 py-0.5 text-xs hover:bg-secondary/50 hover:underline"
+                        >
+                          {s.sourceName ?? "原文"}
+                          <ExternalLink className="size-3" />
+                        </a>
+                      ))}
+                    </div>
+                  ) : (
+                    <>
+                      <span>出典: {article.source}</span>
+                      {sourceArticleUrl && (
+                        <a
+                          href={sourceArticleUrl}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="inline-flex items-center gap-1 text-accent hover:underline"
+                        >
+                          原文リンク
+                          <ExternalLink className="size-4" />
+                        </a>
+                      )}
+                    </>
                   )}
                 </div>
+                {article.isSynthesized && (
+                  <p className="rounded-lg border border-border bg-secondary/40 px-3 py-2 text-xs leading-6 text-muted-foreground">
+                    本記事は複数ソースを統合して編集部AIが作成しました。事実はソースに帰属します。
+                  </p>
+                )}
               </div>
             </div>
 
@@ -188,64 +214,75 @@ export function ArticleView({ id }: { id: string }) {
               </ul>
             </section>
 
-            <section className="rounded-3xl border border-border bg-card p-6">
-              <p className="text-sm font-medium uppercase tracking-[0.18em] text-accent">
-                検証情報
-              </p>
-              <div className="mt-4 space-y-3 text-sm leading-7 text-foreground">
-                <p>
-                  <span className="font-medium">原文タイトル:</span>{" "}
-                  {article.provenance?.originalTitle ?? article.title}
+            {allSources.length > 0 && (
+              <section className="rounded-3xl border border-border bg-card p-6">
+                <p className="text-sm font-medium uppercase tracking-[0.18em] text-accent">
+                  検証情報
                 </p>
-                {article.provenance?.originalPublishedAt && (
-                  <p>
-                    <span className="font-medium">原文公開日:</span>{" "}
-                    {article.provenance.originalPublishedAt}
-                  </p>
-                )}
-                {article.provenance?.fetchedAt && (
-                  <p>
-                    <span className="font-medium">取得時刻:</span>{" "}
-                    {article.provenance.fetchedAt}
-                  </p>
-                )}
-                {article.provenance?.extractedBy && (
-                  <p>
-                    <span className="font-medium">抽出方式:</span>{" "}
-                    {article.provenance.extractedBy}
-                  </p>
-                )}
-                {sourceArticleUrl && (
-                  <p>
-                    <span className="font-medium">原文URL:</span>{" "}
-                    <a
-                      href={sourceArticleUrl}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      className="text-accent underline-offset-4 hover:underline"
-                    >
-                      {sourceArticleUrl}
-                    </a>
-                  </p>
-                )}
-              </div>
-
-              {evidenceSnippets.length > 0 && (
-                <div className="mt-4 space-y-2">
-                  <p className="text-sm font-medium text-foreground">原文抜粋</p>
-                  <ul className="space-y-2">
-                    {evidenceSnippets.map((snippet, index) => (
-                      <li
-                        key={`${index}-${snippet.slice(0, 20)}`}
-                        className="rounded-2xl border border-border bg-secondary/30 px-4 py-3 text-sm text-muted-foreground"
-                      >
-                        {snippet}
-                      </li>
-                    ))}
-                  </ul>
+                <div className="mt-4 space-y-6">
+                  {allSources.map((src, idx) => (
+                    <div key={`${idx}-${src.originalUrl}`} className="space-y-3 text-sm leading-7 text-foreground">
+                      <div className="flex items-center gap-2">
+                        <Badge variant="outline" className="px-2 py-0.5 text-xs">
+                          {src.sourceName ?? `ソース${idx + 1}`}
+                        </Badge>
+                      </div>
+                      <p>
+                        <span className="font-medium">原文タイトル:</span>{" "}
+                        {src.originalTitle}
+                      </p>
+                      {src.originalPublishedAt && (
+                        <p>
+                          <span className="font-medium">原文公開日:</span>{" "}
+                          {src.originalPublishedAt}
+                        </p>
+                      )}
+                      {src.fetchedAt && (
+                        <p>
+                          <span className="font-medium">取得時刻:</span>{" "}
+                          {src.fetchedAt}
+                        </p>
+                      )}
+                      {src.extractedBy && (
+                        <p>
+                          <span className="font-medium">抽出方式:</span>{" "}
+                          {src.extractedBy}
+                        </p>
+                      )}
+                      {src.originalUrl && (
+                        <p>
+                          <span className="font-medium">原文URL:</span>{" "}
+                          <a
+                            href={src.originalUrl}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="text-accent underline-offset-4 hover:underline"
+                          >
+                            {src.originalUrl}
+                          </a>
+                        </p>
+                      )}
+                      {src.evidenceSnippets && src.evidenceSnippets.length > 0 && (
+                        <div className="space-y-2">
+                          <p className="text-sm font-medium text-foreground">原文抜粋</p>
+                          <ul className="space-y-2">
+                            {src.evidenceSnippets.map((snippet, sIdx) => (
+                              <li
+                                key={`${sIdx}-${snippet.slice(0, 20)}`}
+                                className="rounded-2xl border border-border bg-secondary/30 px-4 py-3 text-sm text-muted-foreground"
+                              >
+                                {snippet}
+                              </li>
+                            ))}
+                          </ul>
+                        </div>
+                      )}
+                      {idx < allSources.length - 1 && <Separator className="mt-2" />}
+                    </div>
+                  ))}
                 </div>
-              )}
-            </section>
+              </section>
+            )}
 
             {article.industryTags.length > 0 && (
               <section className="rounded-3xl border border-border bg-card p-6">

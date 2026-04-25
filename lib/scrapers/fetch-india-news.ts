@@ -348,6 +348,28 @@ function parseDateToIsoDate(value: string): string {
   return new Date(ts).toISOString().slice(0, 10)
 }
 
+async function mapWithConcurrencyLimit<T, R>(
+  items: readonly T[],
+  concurrency: number,
+  mapper: (item: T, index: number) => Promise<R>,
+): Promise<R[]> {
+  const results: R[] = new Array(items.length)
+  const workerCount = Math.max(1, Math.min(concurrency, items.length))
+  let nextIndex = 0
+
+  const workers = Array.from({ length: workerCount }, async () => {
+    while (true) {
+      const currentIndex = nextIndex
+      nextIndex += 1
+      if (currentIndex >= items.length) break
+      results[currentIndex] = await mapper(items[currentIndex], currentIndex)
+    }
+  })
+
+  await Promise.all(workers)
+  return results
+}
+
 async function resolveFinalUrl(url: string, timeoutMs = 10_000): Promise<string> {
   const controller = new AbortController()
   const timer = setTimeout(() => controller.abort(), timeoutMs)
@@ -401,6 +423,14 @@ function stringifyField(value: unknown): string {
   return ""
 }
 
+interface ParsedCandidate {
+  item: RssItem
+  title: string
+  link: string
+  pubDateRaw: string
+  body: string
+}
+
 async function parseRss(
   xml: string,
   connector: Connector,
@@ -419,10 +449,11 @@ async function parseRss(
   const rawItems = channel?.item ?? (parsed as Record<string, unknown>).entry ?? []
   const items: RssItem[] = Array.isArray(rawItems) ? (rawItems as RssItem[]) : [rawItems as RssItem]
 
-  const output: RawSourceArticle[] = []
-
+  // Collect candidates that pass basic filters (no network calls yet).
+  // Over-fetch slightly so that URL-quality filtering still yields `limit` results.
+  const candidates: ParsedCandidate[] = []
   for (const item of items) {
-    if (output.length >= limit) break
+    if (candidates.length >= limit * 2) break
 
     const title = stringifyField(item.title).trim()
     const link = stringifyField(item.link).trim()
@@ -435,10 +466,25 @@ async function parseRss(
 
     if (!connector.alreadyIndiaFocused && !isIndiaRelevant(title, body)) continue
 
-    const canonical = await resolveFinalUrl(link)
+    candidates.push({ item, title, link, pubDateRaw, body })
+  }
+
+  // Resolve redirect URLs in parallel, but only for Google News links which
+  // require following a redirect to reach the actual article URL.
+  const resolved = await mapWithConcurrencyLimit(candidates, 4, async ({ link }) => {
+    if (!link.startsWith("https://news.google.com/")) return link
+    return resolveFinalUrl(link, 8_000)
+  })
+
+  const fetchedAt = new Date().toISOString()
+  const output: RawSourceArticle[] = []
+
+  for (let i = 0; i < candidates.length; i++) {
+    if (output.length >= limit) break
+    const { item, title, link, pubDateRaw, body } = candidates[i]
+    const canonical = resolved[i]
     if (!isLikelyArticleUrl(canonical)) continue
 
-    const fetchedAt = new Date().toISOString()
     const publishedAt = parseDateToIsoDate(pubDateRaw)
 
     output.push({
@@ -500,22 +546,39 @@ async function fetchGNews(limit: number): Promise<{
   }
 
   const rows = payload.articles ?? []
-  const output: RawSourceArticle[] = []
 
+  // Filter rows that pass basic checks before making any network calls.
+  interface GNewsCandidate {
+    row: GNewsArticle
+    title: string
+    link: string
+  }
+  const candidates: GNewsCandidate[] = []
   for (const row of rows) {
     const title = (row.title ?? "").trim()
     const link = (row.url ?? "").trim()
     if (!title || !link) continue
     if (!isLikelyArticleUrl(link)) continue
+    candidates.push({ row, title, link })
+  }
 
-    const canonical = await resolveFinalUrl(link)
+  // Resolve final URLs in parallel (GNews API may return shortened/redirect links).
+  const canonicals = await mapWithConcurrencyLimit(candidates, 4, ({ link }) =>
+    resolveFinalUrl(link),
+  )
+
+  const fetchedAt = new Date().toISOString()
+  const output: RawSourceArticle[] = []
+
+  for (let i = 0; i < candidates.length; i++) {
+    const { row, title } = candidates[i]
+    const canonical = canonicals[i]
     if (!isLikelyArticleUrl(canonical)) continue
 
     const description = stripHtml(row.description ?? "")
     const content = stripHtml(row.content ?? "")
     const body = [description, content].filter(Boolean).join(" ").trim()
     const publishedAt = parseDateToIsoDate(row.publishedAt ?? "")
-    const fetchedAt = new Date().toISOString()
 
     output.push({
       connectorId: "gnews-api",
@@ -589,28 +652,6 @@ export async function fetchSimilarArticles(
   } catch {
     return []
   }
-}
-
-async function mapWithConcurrencyLimit<T, R>(
-  items: readonly T[],
-  concurrency: number,
-  mapper: (item: T, index: number) => Promise<R>,
-): Promise<R[]> {
-  const results: R[] = new Array(items.length)
-  const workerCount = Math.max(1, Math.min(concurrency, items.length))
-  let nextIndex = 0
-
-  const workers = Array.from({ length: workerCount }, async () => {
-    while (true) {
-      const currentIndex = nextIndex
-      nextIndex += 1
-      if (currentIndex >= items.length) break
-      results[currentIndex] = await mapper(items[currentIndex], currentIndex)
-    }
-  })
-
-  await Promise.all(workers)
-  return results
 }
 
 export async function fetchIndiaNews(limitPerConnector = 6): Promise<FetchIndiaNewsResult> {

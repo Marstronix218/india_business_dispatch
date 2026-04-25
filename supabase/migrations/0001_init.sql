@@ -18,7 +18,6 @@ create table if not exists public.articles (
   workflow_status text not null default 'published',
   image_url text,
   featured boolean not null default false,
-  market_snapshot jsonb,
   is_synthesized boolean not null default false,
   dedupe_key text,
   created_at timestamptz not null default now(),

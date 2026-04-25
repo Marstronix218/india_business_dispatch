@@ -9,7 +9,6 @@ import {
   type Category,
   type ContentType,
   type IndustryTag,
-  type MarketSnapshot,
   type Visibility,
   type WorkflowStatus,
 } from "@/lib/news-data"
@@ -39,7 +38,6 @@ interface CreateBody {
   workflowStatus?: unknown
   imageUrl?: unknown
   featured?: unknown
-  marketSnapshot?: unknown
 }
 
 function normalize(body: CreateBody): InsertArticleInput | { error: string } {
@@ -73,35 +71,8 @@ function normalize(body: CreateBody): InsertArticleInput | { error: string } {
     workflowStatus: body.workflowStatus as WorkflowStatus,
     imageUrl: typeof body.imageUrl === "string" && body.imageUrl ? body.imageUrl : undefined,
     featured: body.featured === true,
-    marketSnapshot:
-      body.category === "market" && isMarketSnapshot(body.marketSnapshot)
-        ? body.marketSnapshot
-        : undefined,
     isSynthesized: false,
   }
-}
-
-function isMarketSnapshot(value: unknown): value is MarketSnapshot {
-  if (typeof value !== "object" || value === null) return false
-  const v = value as Record<string, unknown>
-  return (
-    isMarketMetric(v.fx) &&
-    isMarketMetric(v.equities) &&
-    isMarketMetric(v.rates) &&
-    isMarketMetric(v.oil)
-  )
-}
-
-function isMarketMetric(value: unknown): boolean {
-  if (typeof value !== "object" || value === null) return false
-  const v = value as Record<string, unknown>
-  return (
-    typeof v.label === "string" &&
-    typeof v.value === "string" &&
-    typeof v.change === "string" &&
-    typeof v.unit === "string" &&
-    typeof v.asOf === "string"
-  )
 }
 
 export async function POST(request: Request) {

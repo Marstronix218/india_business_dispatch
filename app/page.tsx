@@ -7,9 +7,9 @@ import { getPublicSeedArticles } from "@/lib/news-data"
 export const revalidate = 0
 
 export default async function HomePage() {
-  const initial = hasSupabaseConfig()
-    ? await listPublishedArticles()
-    : getPublicSeedArticles()
+  const supabaseOn = hasSupabaseConfig()
+  const fromDb = supabaseOn ? await listPublishedArticles() : []
+  const initial = fromDb.length > 0 ? fromDb : getPublicSeedArticles()
 
   return (
     <ArticleStoreProvider initial={initial}>

@@ -186,6 +186,8 @@ export function ArticleFormDialog({
       workflowStatus: form.workflowStatus,
       imageUrl: form.imageUrl.trim() || undefined,
       featured: form.featured,
+      marketSnapshot:
+        form.category === "market" ? form.marketSnapshot : undefined,
     }
 
     setSubmitting(true)

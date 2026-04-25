@@ -9,6 +9,7 @@ import {
   type Category,
   type ContentType,
   type IndustryTag,
+  type MarketSnapshot,
   type Visibility,
   type WorkflowStatus,
 } from "@/lib/news-data"
@@ -41,7 +42,33 @@ function pickUpdate(body: Record<string, unknown>): UpdateArticleInput {
     input.imageUrl = (body.imageUrl as string | null) ?? undefined
   }
   if (typeof body.featured === "boolean") input.featured = body.featured
+  if (isMarketSnapshot(body.marketSnapshot)) {
+    input.marketSnapshot = body.marketSnapshot
+  }
   return input
+}
+
+function isMarketSnapshot(value: unknown): value is MarketSnapshot {
+  if (typeof value !== "object" || value === null) return false
+  const v = value as Record<string, unknown>
+  return (
+    isMarketMetric(v.fx) &&
+    isMarketMetric(v.equities) &&
+    isMarketMetric(v.rates) &&
+    isMarketMetric(v.oil)
+  )
+}
+
+function isMarketMetric(value: unknown): boolean {
+  if (typeof value !== "object" || value === null) return false
+  const v = value as Record<string, unknown>
+  return (
+    typeof v.label === "string" &&
+    typeof v.value === "string" &&
+    typeof v.change === "string" &&
+    typeof v.unit === "string" &&
+    typeof v.asOf === "string"
+  )
 }
 
 export async function PATCH(

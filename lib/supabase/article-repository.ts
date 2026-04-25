@@ -3,6 +3,7 @@ import {
   type Category,
   type ContentType,
   type IndustryTag,
+  type MarketSnapshot,
   type NewsArticle,
   type SourceProvenance,
   type Visibility,
@@ -26,6 +27,7 @@ interface ArticleRow {
   workflow_status: string
   image_url: string | null
   featured: boolean
+  market_snapshot: MarketSnapshot | null
   is_synthesized: boolean
   dedupe_key: string | null
   article_sources?: SourceRow[] | null
@@ -48,7 +50,7 @@ interface SourceRow {
 const ARTICLE_SELECT = `
   id, title, summary, source, source_url, published_at, category,
   industry_tags, implications, content_type, visibility, workflow_status,
-  image_url, featured, is_synthesized, dedupe_key,
+  image_url, featured, market_snapshot, is_synthesized, dedupe_key,
   article_sources (
     article_id, source_name, original_title, original_url, canonical_url,
     original_published_at, fetched_at, extracted_by, source_language,
@@ -91,6 +93,7 @@ function rowToArticle(row: ArticleRow): NewsArticle {
     workflowStatus: row.workflow_status as WorkflowStatus,
     imageUrl: row.image_url ?? undefined,
     featured: row.featured,
+    marketSnapshot: row.market_snapshot ?? undefined,
     isSynthesized: row.is_synthesized,
     provenance: sources[0],
     sources: sources.length > 0 ? sources : undefined,
@@ -162,6 +165,7 @@ export interface InsertArticleInput {
   workflowStatus: WorkflowStatus
   imageUrl?: string
   featured?: boolean
+  marketSnapshot?: MarketSnapshot
   isSynthesized?: boolean
   dedupeKey?: string
   sources?: SourceProvenance[]
@@ -182,6 +186,7 @@ function toRowInsert(input: InsertArticleInput) {
     workflow_status: input.workflowStatus,
     image_url: input.imageUrl ?? null,
     featured: input.featured ?? false,
+    market_snapshot: input.marketSnapshot ?? null,
     is_synthesized: input.isSynthesized ?? false,
     dedupe_key: input.dedupeKey ?? null,
   }
@@ -325,6 +330,7 @@ export async function updateArticle(
   if (input.workflowStatus !== undefined) row.workflow_status = input.workflowStatus
   if (input.imageUrl !== undefined) row.image_url = input.imageUrl ?? null
   if (input.featured !== undefined) row.featured = input.featured
+  if (input.marketSnapshot !== undefined) row.market_snapshot = input.marketSnapshot ?? null
   if (input.isSynthesized !== undefined) row.is_synthesized = input.isSynthesized
 
   const { error } = await client.from("articles").update(row).eq("id", id)

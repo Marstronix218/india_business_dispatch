@@ -359,8 +359,7 @@ async function mapWithConcurrencyLimit<T, R>(
 
   const workers = Array.from({ length: workerCount }, async () => {
     while (true) {
-      const currentIndex = nextIndex
-      nextIndex += 1
+      const currentIndex = nextIndex++
       if (currentIndex >= items.length) break
       results[currentIndex] = await mapper(items[currentIndex], currentIndex)
     }
@@ -450,7 +449,8 @@ async function parseRss(
   const items: RssItem[] = Array.isArray(rawItems) ? (rawItems as RssItem[]) : [rawItems as RssItem]
 
   // Collect candidates that pass basic filters (no network calls yet).
-  // Over-fetch slightly so that URL-quality filtering still yields `limit` results.
+  // Over-fetch by 2× so that URL-quality filtering still yields `limit` results
+  // even when some resolved URLs are rejected by isLikelyArticleUrl.
   const candidates: ParsedCandidate[] = []
   for (const item of items) {
     if (candidates.length >= limit * 2) break
@@ -471,6 +471,8 @@ async function parseRss(
 
   // Resolve redirect URLs in parallel, but only for Google News links which
   // require following a redirect to reach the actual article URL.
+  // Use a shorter timeout (8 s) for Google News redirects since they are
+  // lightweight HTTP redirects, not full page loads.
   const resolved = await mapWithConcurrencyLimit(candidates, 4, async ({ link }) => {
     if (!link.startsWith("https://news.google.com/")) return link
     return resolveFinalUrl(link, 8_000)

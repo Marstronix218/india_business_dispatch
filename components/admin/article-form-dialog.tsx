@@ -198,6 +198,7 @@ export function ArticleFormDialog({
       const method = editingId ? "PATCH" : "POST"
       const response = await fetch(endpoint, {
         method,
+        credentials: "same-origin",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(payload),
       })

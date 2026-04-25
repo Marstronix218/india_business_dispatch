@@ -100,6 +100,7 @@ export default function AdminPage() {
     try {
       const response = await fetch(`/api/admin/articles/${id}`, {
         method: "DELETE",
+        credentials: "same-origin",
       })
       const data = (await response.json()) as { ok?: boolean; error?: string }
       if (!response.ok || !data.ok) {

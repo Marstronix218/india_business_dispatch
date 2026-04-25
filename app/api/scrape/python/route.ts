@@ -2,13 +2,18 @@ import { execFile } from "node:child_process"
 import { promisify } from "node:util"
 import { NextResponse } from "next/server"
 import { runAutomationPipeline, type RawSourceArticle } from "@/lib/automation"
+import { isAdminRequest } from "@/lib/admin-auth"
 
 const execFileAsync = promisify(execFile)
 
 export const dynamic = "force-dynamic"
 export const runtime = "nodejs"
 
-export async function POST() {
+export async function POST(request: Request) {
+  if (!isAdminRequest(request)) {
+    return NextResponse.json({ ok: false, error: "unauthorized" }, { status: 401 })
+  }
+
   try {
     const { stdout } = await execFileAsync("python3", [
       "scripts/python/fetch_india_news.py",

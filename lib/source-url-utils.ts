@@ -41,10 +41,5 @@ export function isLikelyArticleUrl(sourceUrl: string | undefined) {
 export function resolveSourceArticleUrl(sourceUrl: string | undefined, title: string) {
   void title
   if (!sourceUrl) return undefined
-
-  try {
-    return isLikelyArticleUrl(sourceUrl) ? sourceUrl : undefined
-  } catch {
-    return sourceUrl
-  }
+  return isLikelyArticleUrl(sourceUrl) ? sourceUrl : undefined
 }

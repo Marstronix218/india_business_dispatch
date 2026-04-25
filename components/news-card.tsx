@@ -5,10 +5,9 @@ import { Badge } from "@/components/ui/badge"
 import {
   CATEGORY_COLORS,
   CATEGORY_LABELS,
-  CONTENT_TYPE_LABELS,
   MARKET_METRIC_ORDER,
-  VISIBILITY_LABELS,
   formatArticleShortDate,
+  getAllSources,
   type MarketSnapshot,
   type NewsArticle,
 } from "@/lib/news-data"
@@ -25,14 +24,17 @@ function ArticleMeta({ article }: { article: NewsArticle }) {
         <Clock className="size-3" />
         {formatArticleShortDate(article.publishedAt)}
       </span>
-      <Badge variant="outline" className="px-2 py-0.5">
-        {CONTENT_TYPE_LABELS[article.contentType]}
-      </Badge>
-      <Badge variant="outline" className="px-2 py-0.5">
-        {VISIBILITY_LABELS[article.visibility]}
-      </Badge>
     </div>
   )
+}
+
+function formatSourcesLabel(article: NewsArticle): string {
+  const sources = getAllSources(article)
+  if (sources.length === 0) return article.source
+  const names = sources.map((s) => s.sourceName).filter((s): s is string => Boolean(s))
+  if (names.length === 0) return article.source
+  const head = names.slice(0, 3).join("、")
+  return names.length > 3 ? `${head} 他` : head
 }
 
 function MarketSnapshotRow({ snapshot }: { snapshot: MarketSnapshot }) {
@@ -65,13 +67,18 @@ function ArticleContent({
   titleClassName,
   summaryClassName,
   showMarketSnapshot = true,
+  showSourceLink = true,
 }: {
   article: NewsArticle
   titleClassName: string
   summaryClassName: string
   showMarketSnapshot?: boolean
+  showSourceLink?: boolean
 }) {
   const sourceArticleUrl = resolveSourceArticleUrl(article.sourceUrl, article.title)
+  const sources = getAllSources(article)
+  const sourcesLabel = formatSourcesLabel(article)
+  const isMultiSource = sources.length > 1
 
   return (
     <div className="min-w-0 space-y-1.5">
@@ -83,7 +90,9 @@ function ArticleContent({
       {showMarketSnapshot && article.marketSnapshot && (
         <MarketSnapshotRow snapshot={article.marketSnapshot} />
       )}
-      {sourceArticleUrl ? (
+      {isMultiSource ? (
+        <p className="text-xs text-muted-foreground">出典: {sourcesLabel}</p>
+      ) : sourceArticleUrl && showSourceLink ? (
         <a
           href={sourceArticleUrl}
           target="_blank"
@@ -91,10 +100,10 @@ function ArticleContent({
           onClick={(event) => event.stopPropagation()}
           className="w-fit text-xs text-muted-foreground underline-offset-4 hover:text-foreground hover:underline"
         >
-          出典: {article.source}
+          出典: {sourcesLabel}
         </a>
       ) : (
-        <p className="text-xs text-muted-foreground">出典: {article.source}</p>
+        <p className="text-xs text-muted-foreground">出典: {sourcesLabel}</p>
       )}
     </div>
   )
@@ -126,6 +135,7 @@ export function NewsCardFeatured({ article }: { article: NewsArticle }) {
           titleClassName="line-clamp-2 text-lg font-semibold leading-tight text-foreground transition-colors group-hover:text-primary md:text-xl"
           summaryClassName="line-clamp-2 text-sm leading-6 text-muted-foreground"
           showMarketSnapshot={false}
+          showSourceLink={false}
         />
       </div>
     </Link>
@@ -157,6 +167,7 @@ export function NewsCardGridItem({ article }: { article: NewsArticle }) {
           titleClassName="line-clamp-2 text-sm font-semibold leading-snug text-foreground transition-colors group-hover:text-primary"
           summaryClassName="line-clamp-1 text-xs leading-5 text-muted-foreground"
           showMarketSnapshot={false}
+          showSourceLink={false}
         />
       </div>
     </Link>

@@ -2,13 +2,18 @@ import { execFile } from "node:child_process"
 import { promisify } from "node:util"
 import { NextResponse } from "next/server"
 import { runAutomationPipeline, type RawSourceArticle } from "@/lib/automation"
+import { isAdminRequest } from "@/lib/admin-auth"
 
 const execFileAsync = promisify(execFile)
 
 export const dynamic = "force-dynamic"
 export const runtime = "nodejs"
 
-export async function POST() {
+export async function POST(request: Request) {
+  if (!isAdminRequest(request)) {
+    return NextResponse.json({ ok: false, error: "unauthorized" }, { status: 401 })
+  }
+
   try {
     const { stdout } = await execFileAsync("python3", [
       "scripts/python/fetch_india_news.py",
@@ -23,17 +28,25 @@ export async function POST() {
 
     const rawArticles = Array.isArray(payload.rawArticles) ? payload.rawArticles : []
     if (rawArticles.length === 0) {
-      return NextResponse.json(
-        {
-          ok: false,
-          error: "No raw articles from python scraper",
-          fetchErrors: payload.errors ?? [],
+      return NextResponse.json({
+        ok: true,
+        warning: "No raw articles from python scraper",
+        fetchErrors: payload.errors ?? [],
+        summary: {
+          fetched: 0,
+          published: 0,
+          reviewQueue: 0,
+          failed: 0,
         },
-        { status: 502 },
-      )
+        result: {
+          published: [],
+          reviewQueue: [],
+          failed: [],
+        },
+      })
     }
 
-    const result = runAutomationPipeline(rawArticles)
+    const result = await runAutomationPipeline(rawArticles)
 
     return NextResponse.json({
       ok: true,

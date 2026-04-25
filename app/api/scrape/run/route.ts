@@ -1,13 +1,19 @@
 import { NextResponse } from "next/server"
 import { runAutomationPipeline, type RawSourceArticle } from "@/lib/automation"
+import { isAdminRequest } from "@/lib/admin-auth"
 
 export const dynamic = "force-dynamic"
+export const runtime = "nodejs"
 
 interface RequestBody {
   rawArticles?: RawSourceArticle[]
 }
 
 export async function POST(request: Request) {
+  if (!isAdminRequest(request)) {
+    return NextResponse.json({ ok: false, error: "unauthorized" }, { status: 401 })
+  }
+
   try {
     const payload = (await request.json()) as RequestBody
     const rawArticles = Array.isArray(payload.rawArticles) ? payload.rawArticles : []
@@ -19,7 +25,7 @@ export async function POST(request: Request) {
       )
     }
 
-    const result = runAutomationPipeline(rawArticles)
+    const result = await runAutomationPipeline(rawArticles)
 
     return NextResponse.json({
       ok: true,

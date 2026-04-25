@@ -47,8 +47,11 @@ export default function RootLayout({
   children: React.ReactNode
 }>) {
   return (
-    <html lang="ja">
-      <body className={`${notoSansJP.variable} font-sans antialiased`}>
+    <html lang="ja" suppressHydrationWarning>
+      <body
+        suppressHydrationWarning
+        className={`${notoSansJP.variable} font-sans antialiased`}
+      >
         {children}
         <Toaster richColors position="top-right" />
         {process.env.NODE_ENV === 'production' && <Analytics />}

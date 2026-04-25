@@ -38,6 +38,18 @@ export interface MarketSnapshot {
   oil: MarketMetric
 }
 
+export interface SourceProvenance {
+  originalTitle: string
+  originalUrl: string
+  canonicalUrl?: string
+  originalPublishedAt?: string
+  fetchedAt?: string
+  extractedBy?: string
+  sourceLanguage?: string
+  evidenceSnippets?: string[]
+  sourceName?: string
+}
+
 export interface NewsArticle {
   id: string
   title: string
@@ -54,6 +66,17 @@ export interface NewsArticle {
   imageUrl?: string
   featured?: boolean
   marketSnapshot?: MarketSnapshot
+  provenance?: SourceProvenance
+  sources?: SourceProvenance[]
+  isSynthesized?: boolean
+}
+
+export function getAllSources(article: NewsArticle): SourceProvenance[] {
+  if (article.sources && article.sources.length > 0) return article.sources
+  if (article.provenance) {
+    return [{ ...article.provenance, sourceName: article.provenance.sourceName ?? article.source }]
+  }
+  return []
 }
 
 export const CATEGORY_LABELS: Record<Category, string> = {

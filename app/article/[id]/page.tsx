@@ -1,11 +1,13 @@
 import { getPublicSeedArticles } from "@/lib/news-data"
 import { ArticleView } from "@/components/article-view"
+import { ArticleStoreProvider } from "@/components/article-store-provider"
+import {
+  getArticleById,
+  listPublishedArticles,
+} from "@/lib/supabase/article-repository"
+import { hasSupabaseConfig } from "@/lib/supabase/client"
 
-export function generateStaticParams() {
-  return getPublicSeedArticles().map((article) => ({
-    id: article.id,
-  }))
-}
+export const revalidate = 0
 
 export async function generateMetadata({
   params,
@@ -13,7 +15,9 @@ export async function generateMetadata({
   params: Promise<{ id: string }>
 }) {
   const { id } = await params
-  const article = getPublicSeedArticles().find((a) => a.id === id)
+  const article = hasSupabaseConfig()
+    ? await getArticleById(id)
+    : getPublicSeedArticles().find((a) => a.id === id) ?? null
   if (!article) return { title: "記事が見つかりません | India Business Dispatch" }
 
   return {
@@ -28,5 +32,13 @@ export default async function ArticlePage({
   params: Promise<{ id: string }>
 }) {
   const { id } = await params
-  return <ArticleView id={id} />
+  const initial = hasSupabaseConfig()
+    ? await listPublishedArticles()
+    : getPublicSeedArticles()
+
+  return (
+    <ArticleStoreProvider initial={initial}>
+      <ArticleView id={id} />
+    </ArticleStoreProvider>
+  )
 }

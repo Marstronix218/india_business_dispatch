@@ -11,10 +11,8 @@ import { usePublicArticles } from "@/lib/article-store"
 import {
   CATEGORY_COLORS,
   CATEGORY_LABELS,
-  CONTENT_TYPE_LABELS,
   INDUSTRY_LABELS,
   MARKET_METRIC_ORDER,
-  VISIBILITY_LABELS,
   formatArticleDate,
   getAllSources,
 } from "@/lib/news-data"
@@ -76,16 +74,13 @@ export function ArticleView({ id }: { id: string }) {
         </div>
       </header>
 
-      <main className="mx-auto max-w-6xl px-4 py-10 sm:px-6 lg:px-8">
-        <div className="grid gap-10 lg:grid-cols-[1.15fr_0.85fr]">
-          <article className="space-y-8">
+      <main className="mx-auto max-w-3xl px-4 py-10 sm:px-6 lg:px-8">
+        <article className="space-y-8">
             <div className="space-y-4">
               <div className="flex flex-wrap items-center gap-2">
                 <Badge className={`${CATEGORY_COLORS[article.category]} border-none`}>
                   {CATEGORY_LABELS[article.category]}
                 </Badge>
-                <Badge variant="outline">{CONTENT_TYPE_LABELS[article.contentType]}</Badge>
-                <Badge variant="outline">{VISIBILITY_LABELS[article.visibility]}</Badge>
               </div>
 
               <div className="space-y-3">
@@ -127,23 +122,18 @@ export function ArticleView({ id }: { id: string }) {
                     </>
                   )}
                 </div>
-                {article.isSynthesized && (
-                  <p className="rounded-lg border border-border bg-secondary/40 px-3 py-2 text-xs leading-6 text-muted-foreground">
-                    本記事は複数ソースを統合して編集部AIが作成しました。事実はソースに帰属します。
-                  </p>
-                )}
               </div>
             </div>
 
             {imageSrc && (
-              <div className="relative aspect-[16/9] overflow-hidden rounded-3xl border border-border bg-muted">
+              <div className="relative mx-auto aspect-[4/3] w-full max-w-md overflow-hidden rounded-2xl border border-border bg-muted">
                 <Image
                   src={imageSrc}
                   alt={article.title}
                   fill
                   priority
                   className="object-cover"
-                  sizes="(max-width: 1024px) 100vw, 760px"
+                  sizes="(max-width: 768px) 100vw, 448px"
                 />
               </div>
             )}
@@ -306,7 +296,7 @@ export function ArticleView({ id }: { id: string }) {
                     Related
                   </p>
                   <h2 className="text-2xl font-semibold text-foreground">
-                    関連する短報
+                    関連記事
                   </h2>
                 </div>
                 <div className="space-y-4">
@@ -329,26 +319,7 @@ export function ArticleView({ id }: { id: string }) {
                 </div>
               </section>
             )}
-          </article>
-
-          <aside className="space-y-6">
-            <div className="rounded-3xl border border-border bg-card p-6">
-              <p className="text-sm font-medium uppercase tracking-[0.18em] text-accent">
-                この記事について
-              </p>
-              <div className="mt-4 space-y-3">
-                <Button asChild className="w-full">
-                  <Link href={`/contact?leadType=${leadType}`}>
-                    この記事について相談する
-                  </Link>
-                </Button>
-                <Button asChild variant="outline" className="w-full">
-                  <Link href="/pricing">料金を見る</Link>
-                </Button>
-              </div>
-            </div>
-          </aside>
-        </div>
+        </article>
       </main>
 
       <SiteFooter />

@@ -1,6 +1,7 @@
 "use client"
 
 import { useEffect, useState } from "react"
+import { useRouter } from "next/navigation"
 import {
   Dialog,
   DialogContent,
@@ -20,12 +21,7 @@ import {
   SelectValue,
 } from "@/components/ui/select"
 import { Textarea } from "@/components/ui/textarea"
-import {
-  addArticle,
-  getArticleById,
-  updateArticle,
-  useNextId,
-} from "@/lib/article-store"
+import { getArticleById } from "@/lib/article-store"
 import {
   CATEGORY_LABELS,
   CATEGORY_OPTIONS,
@@ -93,8 +89,9 @@ export function ArticleFormDialog({
   onOpenChange,
   editingId,
 }: ArticleFormDialogProps) {
+  const router = useRouter()
   const [form, setForm] = useState<ArticleFormState>(EMPTY_FORM)
-  const getNextId = useNextId()
+  const [submitting, setSubmitting] = useState(false)
   const isEditing = editingId !== null
 
   useEffect(() => {
@@ -156,8 +153,9 @@ export function ArticleFormDialog({
     }))
   }
 
-  function handleSubmit(event: React.FormEvent<HTMLFormElement>) {
+  async function handleSubmit(event: React.FormEvent<HTMLFormElement>) {
     event.preventDefault()
+    if (submitting) return
 
     const implications = form.implicationsText
       .split("\n")
@@ -188,22 +186,32 @@ export function ArticleFormDialog({
       workflowStatus: form.workflowStatus,
       imageUrl: form.imageUrl.trim() || undefined,
       featured: form.featured,
-      marketSnapshot:
-        form.category === "market" ? form.marketSnapshot : undefined,
     }
 
-    if (editingId) {
-      updateArticle(editingId, payload)
-      toast.success("記事を更新しました。")
-    } else {
-      addArticle({
-        id: getNextId(),
-        ...payload,
+    setSubmitting(true)
+    try {
+      const endpoint = editingId
+        ? `/api/admin/articles/${editingId}`
+        : "/api/admin/articles"
+      const method = editingId ? "PATCH" : "POST"
+      const response = await fetch(endpoint, {
+        method,
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(payload),
       })
-      toast.success("記事を追加しました。")
+      const data = (await response.json()) as { ok?: boolean; error?: string }
+      if (!response.ok || !data.ok) {
+        throw new Error(data.error ?? `HTTP ${response.status}`)
+      }
+      toast.success(editingId ? "記事を更新しました。" : "記事を追加しました。")
+      onOpenChange(false)
+      router.refresh()
+    } catch (error) {
+      const message = error instanceof Error ? error.message : "不明なエラー"
+      toast.error(`保存失敗: ${message}`)
+    } finally {
+      setSubmitting(false)
     }
-
-    onOpenChange(false)
   }
 
   return (
@@ -531,7 +539,9 @@ export function ArticleFormDialog({
             >
               キャンセル
             </Button>
-            <Button type="submit">{isEditing ? "更新する" : "追加する"}</Button>
+            <Button type="submit" disabled={submitting}>
+              {submitting ? "保存中…" : isEditing ? "更新する" : "追加する"}
+            </Button>
           </div>
         </form>
       </DialogContent>

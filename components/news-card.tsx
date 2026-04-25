@@ -5,9 +5,7 @@ import { Badge } from "@/components/ui/badge"
 import {
   CATEGORY_COLORS,
   CATEGORY_LABELS,
-  CONTENT_TYPE_LABELS,
   MARKET_METRIC_ORDER,
-  VISIBILITY_LABELS,
   formatArticleShortDate,
   getAllSources,
   type MarketSnapshot,
@@ -26,17 +24,6 @@ function ArticleMeta({ article }: { article: NewsArticle }) {
         <Clock className="size-3" />
         {formatArticleShortDate(article.publishedAt)}
       </span>
-      <Badge variant="outline" className="px-2 py-0.5">
-        {CONTENT_TYPE_LABELS[article.contentType]}
-      </Badge>
-      <Badge variant="outline" className="px-2 py-0.5">
-        {VISIBILITY_LABELS[article.visibility]}
-      </Badge>
-      {article.isSynthesized && (
-        <Badge variant="outline" className="border-accent/40 px-2 py-0.5 text-accent">
-          合成
-        </Badge>
-      )}
     </div>
   )
 }

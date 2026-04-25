@@ -1,9 +1,10 @@
 "use client"
 
-import { useCallback, useSyncExternalStore } from "react"
+import { useCallback, useEffect, useSyncExternalStore } from "react"
 import { NEWS_ARTICLES, type NewsArticle } from "./news-data"
 
 let articles: NewsArticle[] = [...NEWS_ARTICLES]
+let hydrated = false
 const listeners = new Set<() => void>()
 
 function emitChange() {
@@ -22,6 +23,16 @@ function getSnapshot() {
 function getNumericSuffix(id: string) {
   const match = id.match(/(\d+)$/)
   return match ? Number.parseInt(match[1], 10) : 0
+}
+
+export function hydrateArticles(next: NewsArticle[]) {
+  articles = [...next]
+  hydrated = true
+  emitChange()
+}
+
+export function isHydrated() {
+  return hydrated
 }
 
 export function addArticle(article: NewsArticle) {
@@ -100,4 +111,11 @@ export function useNextId() {
 
     return String(maxId + 1)
   }, [currentArticles])
+}
+
+export function useHydrateArticles(initial: NewsArticle[] | undefined) {
+  useEffect(() => {
+    if (!initial) return
+    hydrateArticles(initial)
+  }, [initial])
 }

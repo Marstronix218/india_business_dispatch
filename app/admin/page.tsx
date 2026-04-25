@@ -2,6 +2,7 @@
 
 import { useMemo, useState } from "react"
 import Link from "next/link"
+import { useRouter } from "next/navigation"
 import {
   ArrowLeft,
   Eye,
@@ -24,7 +25,7 @@ import {
   SelectValue,
 } from "@/components/ui/select"
 import { Separator } from "@/components/ui/separator"
-import { deleteArticle, importArticles, useArticles } from "@/lib/article-store"
+import { useArticles } from "@/lib/article-store"
 import {
   CATEGORY_LABELS,
   CATEGORY_OPTIONS,
@@ -41,6 +42,7 @@ import {
 } from "@/lib/news-data"
 
 export default function AdminPage() {
+  const router = useRouter()
   const articles = useArticles()
   const [search, setSearch] = useState("")
   const [categoryFilter, setCategoryFilter] = useState<Category | "all">("all")
@@ -93,10 +95,22 @@ export default function AdminPage() {
     setFormOpen(true)
   }
 
-  function handleDelete(id: string, title: string) {
+  async function handleDelete(id: string, title: string) {
     if (!window.confirm(`「${title}」を削除しますか？`)) return
-    deleteArticle(id)
-    toast.success("記事を削除しました。")
+    try {
+      const response = await fetch(`/api/admin/articles/${id}`, {
+        method: "DELETE",
+      })
+      const data = (await response.json()) as { ok?: boolean; error?: string }
+      if (!response.ok || !data.ok) {
+        throw new Error(data.error ?? `HTTP ${response.status}`)
+      }
+      toast.success("記事を削除しました。")
+      router.refresh()
+    } catch (error) {
+      const message = error instanceof Error ? error.message : "不明なエラー"
+      toast.error(`削除失敗: ${message}`)
+    }
   }
 
   async function handleRunScrape() {
@@ -132,10 +146,6 @@ export default function AdminPage() {
         throw new Error(data.error ?? "スクレイピング実行に失敗しました")
       }
 
-      const published = Array.isArray(data.result?.published)
-        ? (data.result.published as Parameters<typeof importArticles>[0])
-        : []
-      const imported = importArticles(published)
       const errorCount = Array.isArray(data.fetchErrors) ? data.fetchErrors.length : 0
 
       if ((data.summary?.fetched ?? 0) === 0) {
@@ -146,8 +156,9 @@ export default function AdminPage() {
       }
 
       toast.success(
-        `スクレイピング実行完了: 取得 ${data.summary?.fetched ?? 0}件 / 公開 ${data.summary?.published ?? 0}件 / 追加 ${imported.length}件 / 取得失敗 ${errorCount}件`,
+        `スクレイピング実行完了: 取得 ${data.summary?.fetched ?? 0}件 / 公開 ${data.summary?.published ?? 0}件 / 取得失敗 ${errorCount}件`,
       )
+      router.refresh()
     } catch (error) {
       const message =
         error instanceof Error ? error.message : "不明なエラーが発生しました"

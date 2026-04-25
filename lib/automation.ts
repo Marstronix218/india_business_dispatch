@@ -16,6 +16,8 @@ import {
   type SynthesisOutput,
   type SynthesisSource,
 } from "@/lib/llm"
+import { resolveOgImage } from "@/lib/scrapers/og-image"
+import { fetchSimilarArticles } from "@/lib/scrapers/fetch-india-news"
 
 export type ConnectorMode = "rss" | "api"
 
@@ -281,11 +283,30 @@ function buildSynthesizedDraft(
   }
 }
 
+async function ensureImageUrl(cluster: RawSourceArticle[]): Promise<void> {
+  if (cluster.some((a) => a.imageUrl && a.imageUrl.length > 0)) return
+  for (const article of cluster) {
+    if (!isLikelyArticleUrl(article.url)) continue
+    const image = await resolveOgImage(article.url)
+    if (image) {
+      article.imageUrl = image
+      for (const other of cluster) {
+        if (!other.imageUrl) other.imageUrl = image
+      }
+      return
+    }
+  }
+}
+
 async function buildDraft(
   cluster: RawSourceArticle[],
   llm: LLMClient | null,
 ): Promise<PipelineDraft> {
   const primary = pickPrimary(cluster)
+
+  if (cluster.length < 2) {
+    return buildFailedDraft(cluster, primary, "単独ソースのため著作権配慮で除外")
+  }
 
   if (!isLikelyArticleUrl(primary.url)) {
     return buildFailedDraft(cluster, primary, "原文URLが記事ページではない")
@@ -294,6 +315,8 @@ async function buildDraft(
   if (!cleanText(primary.bodyText ?? "")) {
     return buildFailedDraft(cluster, primary, "本文が空のため合成不可")
   }
+
+  await ensureImageUrl(cluster)
 
   if (!llm) {
     return buildFallbackDraft(cluster, primary, "LLM未設定、旧方式で暫定生成")
@@ -322,6 +345,51 @@ async function buildDraft(
     console.error(`[automation] LLM合成失敗 (title="${primary.title}"): ${msg}`)
     return buildFallbackDraft(cluster, primary, `LLM合成失敗: ${msg}`)
   }
+}
+
+function urlKey(a: RawSourceArticle): string {
+  return (a.canonicalUrl ?? a.url).split("?")[0].replace(/\/+$/, "").toLowerCase()
+}
+
+function isPromisingSingleton(article: RawSourceArticle): boolean {
+  const t = article.title
+  if (!t) return false
+  const properNounCount = (t.match(/\b[A-Z][a-zA-Z0-9]{2,}\b/g) ?? []).length
+  const acronymCount = (t.match(/\b[A-Z]{2,}\b/g) ?? []).length
+  const hasNumber = /\d/.test(t)
+  return properNounCount >= 2 || acronymCount >= 1 || (properNounCount >= 1 && hasNumber)
+}
+
+async function augmentSingletonClusters(
+  clusters: RawSourceArticle[][],
+  alreadyFetched: RawSourceArticle[],
+  maxSeeds: number,
+): Promise<RawSourceArticle[][]> {
+  const excludeUrls = new Set(alreadyFetched.map(urlKey))
+
+  const singletonIndexes: number[] = []
+  for (let i = 0; i < clusters.length; i++) {
+    if (clusters[i].length === 1 && isPromisingSingleton(clusters[i][0])) {
+      singletonIndexes.push(i)
+    }
+  }
+  const seeds = singletonIndexes.slice(0, maxSeeds)
+  if (seeds.length === 0) return clusters
+
+  const augmented = clusters.map((c) => [...c])
+  await Promise.all(
+    seeds.map(async (idx) => {
+      const seed = augmented[idx][0]
+      const found = await fetchSimilarArticles(seed.title, excludeUrls, 3)
+      for (const f of found) {
+        const k = urlKey(f)
+        if (excludeUrls.has(k)) continue
+        excludeUrls.add(k)
+        augmented[idx].push(f)
+      }
+    }),
+  )
+  return augmented
 }
 
 async function mapWithConcurrency<T, R>(
@@ -359,7 +427,30 @@ export async function runAutomationPipeline(
     }
   }
 
-  const clusters = clusterArticles(rawArticles, readClusterOptionsFromEnv())
+  const seen = new Set<string>()
+  const deduped: RawSourceArticle[] = []
+  for (const a of rawArticles) {
+    const key = (a.canonicalUrl ?? a.url).split("?")[0].replace(/\/+$/, "").toLowerCase()
+    if (seen.has(key)) continue
+    seen.add(key)
+    deduped.push(a)
+  }
+
+  const MAX_CLUSTER_SIZE = 5
+  const rawClusters = clusterArticles(deduped, readClusterOptionsFromEnv())
+  const trimmed = rawClusters.map((c) =>
+    c.length > MAX_CLUSTER_SIZE
+      ? [...c]
+          .sort((a, b) => a.connectorId.localeCompare(b.connectorId))
+          .slice(0, MAX_CLUSTER_SIZE)
+      : c,
+  )
+
+  const enableAugment = process.env.AUGMENT_SINGLETONS !== "0"
+  const augmentLimit = Number(process.env.AUGMENT_MAX_SEEDS ?? 5)
+  const clusters = enableAugment
+    ? await augmentSingletonClusters(trimmed, deduped, augmentLimit)
+    : trimmed
   const drafts = await mapWithConcurrency(clusters, 3, (cluster) => buildDraft(cluster, llm))
 
   return drafts.reduce<PipelineResult>(

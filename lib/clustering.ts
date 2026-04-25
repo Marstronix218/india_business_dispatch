@@ -18,6 +18,14 @@ const STOPWORDS = new Set<string>([
   "if", "because", "while", "though", "although", "unless", "until",
   "not", "no", "only", "just", "very", "too", "even", "back", "up", "down",
   "news", "report", "reports", "reuters", "pib", "google", "india", "indian",
+  "business", "economy", "economic", "market", "markets", "company", "companies",
+  "industry", "industries", "sector", "sectors", "growth", "global", "trade",
+  "investment", "investments", "investor", "investors", "deal", "billion", "million",
+  "share", "shares", "stock", "stocks", "price", "prices", "high", "low",
+  "government", "policy", "minister", "ministry", "official", "officials",
+  "country", "world", "international", "national", "local", "state", "states",
+  "ltd", "inc", "corp", "group", "holdings", "limited",
+  "rupee", "rupees",
   "は", "が", "の", "を", "に", "で", "と", "も", "から", "まで",
   "これ", "その", "あの", "この", "それ", "あれ", "ここ", "そこ", "どこ",
   "です", "ます", "した", "する", "ある", "いる", "なる", "れる", "られる",
@@ -132,11 +140,50 @@ export function clusterArticles(
   return [...groups.values()]
 }
 
+export function debugClusterDetails(
+  raws: RawSourceArticle[],
+  opts: ClusterOptions,
+): {
+  total: number
+  multi: Array<{ size: number; titles: string[]; keywords: string[] }>
+  singletons: Array<{ source: string; title: string; keywords: string[] }>
+} {
+  const { keywordsPerArticle } = opts
+  const indexed = raws.map((article) => ({
+    article,
+    keywords: extractKeywords(article.title, article.bodyText ?? "", keywordsPerArticle),
+  }))
+
+  const clusters = clusterArticles(raws, opts)
+  const multi = clusters
+    .filter((c) => c.length > 1)
+    .map((c) => ({
+      size: c.length,
+      titles: c.map((a) => `${a.source}: ${a.title.slice(0, 100)}`),
+      keywords: [
+        ...new Set(
+          c.flatMap((a) => indexed.find((it) => it.article === a)?.keywords ?? []),
+        ),
+      ].slice(0, 12),
+    }))
+
+  const singletons = clusters
+    .filter((c) => c.length === 1)
+    .slice(0, 40)
+    .map((c) => {
+      const a = c[0]
+      const kws = indexed.find((it) => it.article === a)?.keywords ?? []
+      return { source: a.source, title: a.title.slice(0, 100), keywords: kws.slice(0, 8) }
+    })
+
+  return { total: raws.length, multi, singletons }
+}
+
 export function readClusterOptionsFromEnv(): ClusterOptions {
   return {
-    minSharedKeywords: toPositiveInt(process.env.CLUSTER_MIN_SHARED_KEYWORDS, 3),
+    minSharedKeywords: toPositiveInt(process.env.CLUSTER_MIN_SHARED_KEYWORDS, 2),
     windowHours: toPositiveInt(process.env.CLUSTER_TIME_WINDOW_HOURS, 48),
-    keywordsPerArticle: toPositiveInt(process.env.CLUSTER_KEYWORDS_PER_ARTICLE, 12),
+    keywordsPerArticle: toPositiveInt(process.env.CLUSTER_KEYWORDS_PER_ARTICLE, 20),
   }
 }
 

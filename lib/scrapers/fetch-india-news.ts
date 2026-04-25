@@ -591,19 +591,53 @@ export async function fetchSimilarArticles(
   }
 }
 
+async function mapWithConcurrencyLimit<T, R>(
+  items: readonly T[],
+  concurrency: number,
+  mapper: (item: T, index: number) => Promise<R>,
+): Promise<R[]> {
+  const results: R[] = new Array(items.length)
+  const workerCount = Math.max(1, Math.min(concurrency, items.length))
+  let nextIndex = 0
+
+  const workers = Array.from({ length: workerCount }, async () => {
+    while (true) {
+      const currentIndex = nextIndex
+      nextIndex += 1
+      if (currentIndex >= items.length) break
+      results[currentIndex] = await mapper(items[currentIndex], currentIndex)
+    }
+  })
+
+  await Promise.all(workers)
+  return results
+}
+
 export async function fetchIndiaNews(limitPerConnector = 6): Promise<FetchIndiaNewsResult> {
   const rawArticles: RawSourceArticle[] = []
   const errors: Array<{ connectorId: string; error: string }> = []
 
-  for (const connector of CONNECTORS) {
-    try {
-      const xml = await fetchText(connector.url, 20_000)
-      const items = await parseRss(xml, connector, limitPerConnector)
-      rawArticles.push(...items)
-    } catch (error) {
-      const message = error instanceof Error ? error.message : String(error)
-      errors.push({ connectorId: connector.connectorId, error: message })
-    }
+  const connectorResults = await mapWithConcurrencyLimit(
+    CONNECTORS,
+    4,
+    async (connector) => {
+      try {
+        const xml = await fetchText(connector.url, 20_000)
+        const items = await parseRss(xml, connector, limitPerConnector)
+        return { items, error: null as null | { connectorId: string; error: string } }
+      } catch (error) {
+        const message = error instanceof Error ? error.message : String(error)
+        return {
+          items: [] as RawSourceArticle[],
+          error: { connectorId: connector.connectorId, error: message },
+        }
+      }
+    },
+  )
+
+  for (const result of connectorResults) {
+    rawArticles.push(...result.items)
+    if (result.error) errors.push(result.error)
   }
 
   try {

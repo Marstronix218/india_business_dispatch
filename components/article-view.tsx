@@ -2,10 +2,15 @@
 
 import Link from "next/link"
 import Image from "next/image"
-import { ArrowLeft, ExternalLink } from "lucide-react"
+import { ArrowLeft, ChevronDown, ExternalLink } from "lucide-react"
 import { SiteFooter } from "@/components/site-footer"
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
+import {
+  Collapsible,
+  CollapsibleContent,
+  CollapsibleTrigger,
+} from "@/components/ui/collapsible"
 import { Separator } from "@/components/ui/separator"
 import { usePublicArticles } from "@/lib/article-store"
 import {
@@ -209,67 +214,81 @@ export function ArticleView({ id }: { id: string }) {
                 <p className="text-sm font-medium uppercase tracking-[0.18em] text-accent">
                   検証情報
                 </p>
-                <div className="mt-4 space-y-6">
-                  {allSources.map((src, idx) => (
-                    <div key={`${idx}-${src.originalUrl}`} className="space-y-3 text-sm leading-7 text-foreground">
-                      <div className="flex items-center gap-2">
-                        <Badge variant="outline" className="px-2 py-0.5 text-xs">
-                          {src.sourceName ?? `ソース${idx + 1}`}
-                        </Badge>
-                      </div>
-                      <p>
-                        <span className="font-medium">原文タイトル:</span>{" "}
-                        {src.originalTitle}
-                      </p>
-                      {src.originalPublishedAt && (
-                        <p>
-                          <span className="font-medium">原文公開日:</span>{" "}
-                          {src.originalPublishedAt}
-                        </p>
-                      )}
-                      {src.fetchedAt && (
-                        <p>
-                          <span className="font-medium">取得時刻:</span>{" "}
-                          {src.fetchedAt}
-                        </p>
-                      )}
-                      {src.extractedBy && (
-                        <p>
-                          <span className="font-medium">抽出方式:</span>{" "}
-                          {src.extractedBy}
-                        </p>
-                      )}
-                      {src.originalUrl && (
-                        <p>
-                          <span className="font-medium">原文URL:</span>{" "}
+                <div className="mt-4 space-y-4">
+                  {allSources.map((src, idx) => {
+                    const hasDetails =
+                      Boolean(src.fetchedAt) ||
+                      Boolean(src.extractedBy) ||
+                      (src.evidenceSnippets && src.evidenceSnippets.length > 0)
+
+                    return (
+                      <div key={`${idx}-${src.originalUrl}`} className="space-y-2 text-sm leading-7 text-foreground">
+                        <div className="flex flex-wrap items-center gap-2">
+                          <Badge variant="outline" className="px-2 py-0.5 text-xs">
+                            {src.sourceName ?? `ソース${idx + 1}`}
+                          </Badge>
+                          {src.originalPublishedAt && (
+                            <span className="text-xs text-muted-foreground">
+                              {src.originalPublishedAt}
+                            </span>
+                          )}
+                        </div>
+                        {src.originalUrl ? (
                           <a
                             href={src.originalUrl}
                             target="_blank"
                             rel="noopener noreferrer"
-                            className="text-accent underline-offset-4 hover:underline"
+                            className="inline-flex items-start gap-1 text-foreground hover:text-accent hover:underline"
                           >
-                            {src.originalUrl}
+                            <span>{src.originalTitle}</span>
+                            <ExternalLink className="mt-1.5 size-3 shrink-0" />
                           </a>
-                        </p>
-                      )}
-                      {src.evidenceSnippets && src.evidenceSnippets.length > 0 && (
-                        <div className="space-y-2">
-                          <p className="text-sm font-medium text-foreground">原文抜粋</p>
-                          <ul className="space-y-2">
-                            {src.evidenceSnippets.map((snippet, sIdx) => (
-                              <li
-                                key={`${sIdx}-${snippet.slice(0, 20)}`}
-                                className="rounded-2xl border border-border bg-secondary/30 px-4 py-3 text-sm text-muted-foreground"
-                              >
-                                {snippet}
-                              </li>
-                            ))}
-                          </ul>
-                        </div>
-                      )}
-                      {idx < allSources.length - 1 && <Separator className="mt-2" />}
-                    </div>
-                  ))}
+                        ) : (
+                          <p>{src.originalTitle}</p>
+                        )}
+
+                        {hasDetails && (
+                          <Collapsible>
+                            <CollapsibleTrigger className="group inline-flex items-center gap-1 text-xs text-muted-foreground hover:text-foreground">
+                              <ChevronDown className="size-3 transition-transform group-data-[state=open]:rotate-180" />
+                              詳細を表示
+                            </CollapsibleTrigger>
+                            <CollapsibleContent className="mt-2 space-y-2 rounded-2xl border border-border bg-secondary/30 px-4 py-3 text-xs text-muted-foreground">
+                              {src.fetchedAt && (
+                                <p>
+                                  <span className="font-medium text-foreground">取得時刻:</span>{" "}
+                                  {src.fetchedAt}
+                                </p>
+                              )}
+                              {src.extractedBy && (
+                                <p>
+                                  <span className="font-medium text-foreground">抽出方式:</span>{" "}
+                                  {src.extractedBy}
+                                </p>
+                              )}
+                              {src.evidenceSnippets && src.evidenceSnippets.length > 0 && (
+                                <div className="space-y-1">
+                                  <p className="font-medium text-foreground">原文抜粋</p>
+                                  <ul className="space-y-1">
+                                    {src.evidenceSnippets.map((snippet, sIdx) => (
+                                      <li
+                                        key={`${sIdx}-${snippet.slice(0, 20)}`}
+                                        className="rounded-xl bg-card px-3 py-2"
+                                      >
+                                        {snippet}
+                                      </li>
+                                    ))}
+                                  </ul>
+                                </div>
+                              )}
+                            </CollapsibleContent>
+                          </Collapsible>
+                        )}
+
+                        {idx < allSources.length - 1 && <Separator className="mt-2" />}
+                      </div>
+                    )
+                  })}
                 </div>
               </section>
             )}

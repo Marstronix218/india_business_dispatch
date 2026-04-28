@@ -12,6 +12,11 @@ export interface SynthesisInput {
   industryHints?: string[]
 }
 
+export interface IndiaRelevance {
+  score: 0 | 1 | 2 | 3
+  reason: string
+}
+
 export interface SynthesisOutput {
   title: string
   summary: string
@@ -19,6 +24,7 @@ export interface SynthesisOutput {
   industryTags: string[]
   category: string
   citedSources: string[]
+  indiaRelevance: IndiaRelevance
 }
 
 export interface LLMClient {

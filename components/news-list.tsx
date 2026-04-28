@@ -8,11 +8,15 @@ import { SiteHeader } from "@/components/site-header"
 import { Input } from "@/components/ui/input"
 import { usePublicArticles } from "@/lib/article-store"
 import {
+  CATEGORY_LABELS,
+  CATEGORY_OPTIONS,
   INDUSTRY_LABELS,
   INDUSTRY_OPTIONS,
   type Category,
   type IndustryTag,
 } from "@/lib/news-data"
+
+const INDUSTRY_VISIBLE_CATEGORIES: ReadonlyArray<Category | null> = [null, "economy"]
 
 export function NewsList() {
   const [activeCategory, setActiveCategory] = useState<Category | null>(null)
@@ -21,8 +25,11 @@ export function NewsList() {
   const deferredSearchQuery = useDeferredValue(searchQuery)
   const publicArticles = usePublicArticles()
 
+  const showIndustryFilter = INDUSTRY_VISIBLE_CATEGORIES.includes(activeCategory)
+
   const filteredArticles = useMemo(() => {
     const query = deferredSearchQuery.trim().toLowerCase()
+    const industryFilterActive = showIndustryFilter && selectedIndustries.length > 0
 
     return [...publicArticles]
       .filter((article) => {
@@ -30,7 +37,7 @@ export function NewsList() {
           activeCategory === null || article.category === activeCategory
 
         const matchesIndustry =
-          selectedIndustries.length === 0 ||
+          !industryFilterActive ||
           article.industryTags.some((tag) => selectedIndustries.includes(tag))
 
         const haystack = [
@@ -52,13 +59,26 @@ export function NewsList() {
           new Date(left.publishedAt).getTime()
         )
       })
-  }, [activeCategory, deferredSearchQuery, publicArticles, selectedIndustries])
+  }, [
+    activeCategory,
+    deferredSearchQuery,
+    publicArticles,
+    selectedIndustries,
+    showIndustryFilter,
+  ])
 
   const featuredArticle =
     filteredArticles.find((article) => article.featured) ?? filteredArticles[0]
   const gridArticles = filteredArticles.filter(
     (article) => article.id !== featuredArticle?.id,
   )
+
+  function selectCategory(category: Category | null) {
+    setActiveCategory(category)
+    if (!INDUSTRY_VISIBLE_CATEGORIES.includes(category)) {
+      setSelectedIndustries([])
+    }
+  }
 
   function toggleIndustry(tag: IndustryTag) {
     setSelectedIndustries((current) =>
@@ -68,17 +88,43 @@ export function NewsList() {
     )
   }
 
+  const industryFilterApplied = showIndustryFilter && selectedIndustries.length > 0
+
   return (
     <div className="min-h-screen bg-background">
-      <SiteHeader
-        activeCategory={activeCategory}
-        onCategorySelect={setActiveCategory}
-      />
+      <SiteHeader />
 
       <main className="mx-auto max-w-7xl px-4 py-5 sm:px-6 lg:px-8">
+        <div className="mb-3 flex flex-col gap-3 lg:flex-row lg:items-center">
+          <nav className="flex flex-1 flex-wrap gap-2">
+            <button
+              type="button"
+              onClick={() => selectCategory(null)}
+              className={`rounded-full border px-4 py-2 text-sm transition-colors ${
+                activeCategory === null
+                  ? "border-accent bg-accent text-accent-foreground"
+                  : "border-border bg-card text-muted-foreground hover:text-foreground"
+              }`}
+            >
+              すべて
+            </button>
+            {CATEGORY_OPTIONS.map((category) => (
+              <button
+                key={category}
+                type="button"
+                onClick={() => selectCategory(category)}
+                className={`rounded-full border px-4 py-2 text-sm transition-colors ${
+                  activeCategory === category
+                    ? "border-accent bg-accent text-accent-foreground"
+                    : "border-border bg-card text-muted-foreground hover:text-foreground"
+                }`}
+              >
+                {CATEGORY_LABELS[category]}
+              </button>
+            ))}
+          </nav>
 
-        <div className="mb-4 grid gap-3 rounded-2xl border border-border bg-card p-3 lg:grid-cols-[1fr_auto]">
-          <div className="relative w-full">
+          <div className="relative w-full lg:w-80">
             <Filter className="pointer-events-none absolute left-3 top-1/2 size-4 -translate-y-1/2 text-muted-foreground" />
             <Input
               type="search"
@@ -88,8 +134,10 @@ export function NewsList() {
               className="pl-9"
             />
           </div>
+        </div>
 
-          <div className="flex flex-wrap gap-2">
+        {showIndustryFilter && (
+          <div className="mb-4 flex flex-wrap gap-2 rounded-2xl border border-border bg-card p-3">
             {INDUSTRY_OPTIONS.map((tag) => {
               const active = selectedIndustries.includes(tag)
               return (
@@ -99,7 +147,7 @@ export function NewsList() {
                   onClick={() => toggleIndustry(tag)}
                   className={`rounded-full border px-3 py-1.5 text-xs transition-colors ${
                     active
-                      ? "border-primary bg-primary text-primary-foreground"
+                      ? "border-accent bg-accent text-accent-foreground"
                       : "border-border bg-background text-muted-foreground hover:text-foreground"
                   }`}
                 >
@@ -108,9 +156,9 @@ export function NewsList() {
               )
             })}
           </div>
-        </div>
+        )}
 
-        {(activeCategory || selectedIndustries.length > 0 || searchQuery) && (
+        {(activeCategory || industryFilterApplied || searchQuery) && (
           <div className="mb-4 flex items-center gap-3 text-sm text-muted-foreground">
             <span>{filteredArticles.length}件を表示中</span>
             <button

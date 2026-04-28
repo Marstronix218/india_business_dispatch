@@ -237,6 +237,37 @@ export function formatArticleShortDate(date: string) {
   return `${d.getMonth() + 1}/${d.getDate()}`
 }
 
+const JST_DATETIME_FORMATTER = new Intl.DateTimeFormat("ja-JP", {
+  timeZone: "Asia/Tokyo",
+  year: "numeric",
+  month: "2-digit",
+  day: "2-digit",
+  hour: "2-digit",
+  minute: "2-digit",
+  hour12: false,
+})
+
+const JST_DATE_FORMATTER = new Intl.DateTimeFormat("ja-JP", {
+  timeZone: "Asia/Tokyo",
+  year: "numeric",
+  month: "2-digit",
+  day: "2-digit",
+})
+
+export function formatJstDateTime(value: string | undefined | null): string {
+  if (!value) return ""
+  const d = new Date(value)
+  if (Number.isNaN(d.getTime())) return value
+  return `${JST_DATETIME_FORMATTER.format(d)} JST`
+}
+
+export function formatJstDate(value: string | undefined | null): string {
+  if (!value) return ""
+  const d = new Date(value)
+  if (Number.isNaN(d.getTime())) return value
+  return JST_DATE_FORMATTER.format(d)
+}
+
 export const NEWS_ARTICLES: NewsArticle[] = [
   {
     id: "1",

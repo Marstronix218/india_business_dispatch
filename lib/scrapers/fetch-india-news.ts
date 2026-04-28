@@ -329,7 +329,11 @@ function stripHtml(value: string): string {
 
 function buildEvidenceSnippets(text: string, maxItems = 3): string[] {
   const cleaned = stripHtml(text)
+    .replace(/\[\s*\+\s*\d+\s*chars?\s*\]/gi, "")
+    .replace(/\s+/g, " ")
+    .trim()
   if (!cleaned) return []
+
   const parts = cleaned.split(/(?<=[.!?。])\s+/)
   const snippets: string[] = []
   for (const part of parts) {
@@ -337,6 +341,10 @@ function buildEvidenceSnippets(text: string, maxItems = 3): string[] {
     if (snippet.length < 40) continue
     snippets.push(snippet.slice(0, 220))
     if (snippets.length >= maxItems) break
+  }
+
+  if (snippets.length === 0) {
+    snippets.push(cleaned.slice(0, 220))
   }
   return snippets
 }

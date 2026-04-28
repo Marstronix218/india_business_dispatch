@@ -24,3 +24,27 @@ export function ensureMinimumSummaryLength(summary: string, minLength = 500) {
 
   return extended
 }
+
+const SENTENCES_PER_PARAGRAPH = 3
+
+export function formatSummaryParagraphs(summary: string): string[] {
+  if (!summary) return []
+
+  const explicit = summary
+    .split(/\n{2,}/)
+    .map((p) => p.trim())
+    .filter(Boolean)
+  if (explicit.length > 1) return explicit
+
+  const text = explicit[0] ?? summary.trim()
+  if (!text) return []
+
+  const sentences = text.match(/[^。]+。|[^。]+$/g)
+  if (!sentences || sentences.length <= SENTENCES_PER_PARAGRAPH) return [text]
+
+  const paragraphs: string[] = []
+  for (let i = 0; i < sentences.length; i += SENTENCES_PER_PARAGRAPH) {
+    paragraphs.push(sentences.slice(i, i + SENTENCES_PER_PARAGRAPH).join("").trim())
+  }
+  return paragraphs.filter(Boolean)
+}

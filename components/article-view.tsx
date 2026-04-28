@@ -4,8 +4,8 @@ import Link from "next/link"
 import Image from "next/image"
 import { ArrowLeft, ChevronDown, ExternalLink } from "lucide-react"
 import { SiteFooter } from "@/components/site-footer"
+import { SiteHeader } from "@/components/site-header"
 import { Badge } from "@/components/ui/badge"
-import { Button } from "@/components/ui/button"
 import {
   Collapsible,
   CollapsibleContent,
@@ -19,8 +19,11 @@ import {
   INDUSTRY_LABELS,
   MARKET_METRIC_ORDER,
   formatArticleDate,
+  formatJstDate,
+  formatJstDateTime,
   getAllSources,
 } from "@/lib/news-data"
+import { formatSummaryParagraphs } from "@/lib/summary-utils"
 import { ensureMinimumSummaryLength } from "@/lib/summary-utils"
 import { resolveArticleImageUrl } from "@/lib/image-utils"
 import { resolveSourceArticleUrl } from "@/lib/source-url-utils"
@@ -48,38 +51,26 @@ export function ArticleView({ id }: { id: string }) {
     .filter((item) => item.category === article.category && item.id !== article.id)
     .slice(0, 3)
   const detailedSummary = ensureMinimumSummaryLength(article.summary, 500)
+  const summaryParagraphs = formatSummaryParagraphs(detailedSummary)
   const imageSrc = resolveArticleImageUrl(article.imageUrl, article.id)
   const sourceArticleUrl = resolveSourceArticleUrl(article.sourceUrl, article.title)
   const allSources = getAllSources(article)
 
-  const leadType = article.industryTags.includes("talent") ? "hiring" : "expansion"
-
   return (
     <div className="min-h-screen bg-background">
-      <header className="border-b border-border bg-background">
-        <div className="mx-auto flex max-w-6xl items-center justify-between px-4 py-4 sm:px-6 lg:px-8">
-          <Link
-            href="/"
-            className="inline-flex items-center gap-2 text-sm text-muted-foreground transition-colors hover:text-foreground"
-          >
-            <ArrowLeft className="size-4" />
-            トップに戻る
-          </Link>
-          <Link href="/" className="text-sm font-semibold text-foreground">
-            India Business Dispatch
-          </Link>
-          <div className="flex gap-2">
-            <Button asChild variant="outline" size="sm">
-              <Link href="/pricing">価格</Link>
-            </Button>
-            <Button asChild size="sm">
-              <Link href={`/contact?leadType=${leadType}`}>お問い合わせ</Link>
-            </Button>
-          </div>
-        </div>
-      </header>
+      <SiteHeader />
 
-      <main className="mx-auto max-w-3xl px-4 py-10 sm:px-6 lg:px-8">
+      <div className="mx-auto max-w-3xl px-4 pt-6 sm:px-6 lg:px-8">
+        <Link
+          href="/"
+          className="inline-flex items-center gap-2 text-sm text-muted-foreground transition-colors hover:text-foreground"
+        >
+          <ArrowLeft className="size-4" />
+          トップに戻る
+        </Link>
+      </div>
+
+      <main className="mx-auto max-w-3xl px-4 py-6 sm:px-6 lg:px-8">
         <article className="space-y-8">
             <div className="space-y-4">
               <div className="flex flex-wrap items-center gap-2">
@@ -184,13 +175,15 @@ export function ArticleView({ id }: { id: string }) {
               </section>
             )}
 
-            <section className="rounded-3xl border border-border bg-card p-6">
-              <p className="text-sm font-medium uppercase tracking-[0.18em] text-accent">
-                要約
-              </p>
-              <p className="mt-4 whitespace-pre-line text-base leading-8 text-foreground">
-                {detailedSummary}
-              </p>
+            <section className="space-y-4 rounded-3xl border border-border bg-card p-6">
+              {summaryParagraphs.map((paragraph, idx) => (
+                <p
+                  key={idx}
+                  className="whitespace-pre-line text-base leading-8 text-foreground"
+                >
+                  {paragraph}
+                </p>
+              ))}
             </section>
 
             <section className="rounded-3xl border border-border bg-card p-6">
@@ -229,7 +222,9 @@ export function ArticleView({ id }: { id: string }) {
                           </Badge>
                           {src.originalPublishedAt && (
                             <span className="text-xs text-muted-foreground">
-                              {src.originalPublishedAt}
+                              {src.originalPublishedAt.includes("T")
+                                ? formatJstDateTime(src.originalPublishedAt)
+                                : formatJstDate(src.originalPublishedAt)}
                             </span>
                           )}
                         </div>
@@ -257,7 +252,7 @@ export function ArticleView({ id }: { id: string }) {
                               {src.fetchedAt && (
                                 <p>
                                   <span className="font-medium text-foreground">取得時刻:</span>{" "}
-                                  {src.fetchedAt}
+                                  {formatJstDateTime(src.fetchedAt)}
                                 </p>
                               )}
                               {src.extractedBy && (

@@ -21,7 +21,7 @@ function constantTimeEqual(a: string, b: string): boolean {
   return result === 0
 }
 
-export function middleware(request: NextRequest) {
+export function proxy(request: NextRequest) {
   const apiKey = process.env.ADMIN_API_KEY
 
   // In non-production environments, allow access when no key is configured.

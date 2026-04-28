@@ -1,6 +1,6 @@
 import { LeadCaptureForm } from "@/components/lead-capture-form"
 import { SiteFooter } from "@/components/site-footer"
-import { SitePageHeader } from "@/components/site-page-header"
+import { SiteHeader } from "@/components/site-header"
 import { type LeadType } from "@/lib/site-config"
 
 export default async function ContactPage({
@@ -13,12 +13,18 @@ export default async function ContactPage({
 
   return (
     <div className="min-h-screen bg-background">
-      <SitePageHeader
-        title="お問い合わせ"
-        description="インド進出の検討、人材採用、既進出後の運用課題まで、相談内容をこのページで受け付けます。"
-      />
+      <SiteHeader />
 
-      <main className="mx-auto max-w-5xl px-4 py-10 sm:px-6 lg:px-8">
+      <main className="mx-auto max-w-5xl space-y-6 px-4 py-10 sm:px-6 lg:px-8">
+        <div className="space-y-2">
+          <h1 className="text-3xl font-semibold tracking-tight text-foreground">
+            お問い合わせ
+          </h1>
+          <p className="max-w-3xl text-sm leading-7 text-muted-foreground">
+            インド進出の検討、人材採用、既進出後の運用課題まで、相談内容をこのページで受け付けます。
+          </p>
+        </div>
+
         <div className="rounded-3xl border border-border bg-card p-6 shadow-sm md:p-8">
           <LeadCaptureForm
             initialLeadType={initialLeadType}

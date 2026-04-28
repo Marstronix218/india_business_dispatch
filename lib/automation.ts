@@ -249,6 +249,12 @@ function buildFallbackDraft(
   }
 }
 
+function readIndiaRelevanceMin(): number {
+  const raw = Number(process.env.INDIA_RELEVANCE_MIN)
+  if (!Number.isFinite(raw)) return 2
+  return Math.max(0, Math.min(3, Math.round(raw)))
+}
+
 function buildSynthesizedDraft(
   cluster: RawSourceArticle[],
   primary: RawSourceArticle,
@@ -336,6 +342,15 @@ async function buildDraft(
       categoryHint: primary.legacyCategory,
       industryHints: primary.industryHints,
     })
+
+    const minScore = readIndiaRelevanceMin()
+    if (output.indiaRelevance.score < minScore) {
+      return buildFailedDraft(
+        cluster,
+        primary,
+        `インド関連性が低い (score=${output.indiaRelevance.score}, 閾値=${minScore}): ${output.indiaRelevance.reason}`,
+      )
+    }
 
     return buildSynthesizedDraft(cluster, primary, output)
   } catch (error) {

@@ -1,9 +1,9 @@
 "use client"
 
 import { useCallback, useEffect, useSyncExternalStore } from "react"
-import { NEWS_ARTICLES, type NewsArticle } from "./news-data"
+import { type NewsArticle } from "./news-data"
 
-let articles: NewsArticle[] = [...NEWS_ARTICLES]
+let articles: NewsArticle[] = []
 let hydrated = false
 const listeners = new Set<() => void>()
 

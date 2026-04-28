@@ -1,18 +1,23 @@
 import { NewsList } from "@/components/news-list"
 import { ArticleStoreProvider } from "@/components/article-store-provider"
+import { DataUnavailable } from "@/components/data-unavailable"
 import { listPublishedArticles } from "@/lib/supabase/article-repository"
 import { hasSupabaseConfig } from "@/lib/supabase/client"
-import { getPublicSeedArticles } from "@/lib/news-data"
 
 export const revalidate = 0
 
 export default async function HomePage() {
-  const supabaseOn = hasSupabaseConfig()
-  const fromDb = supabaseOn ? await listPublishedArticles() : []
-  const initial = fromDb.length > 0 ? fromDb : getPublicSeedArticles()
+  if (!hasSupabaseConfig()) {
+    return <DataUnavailable />
+  }
+
+  const articles = await listPublishedArticles()
+  if (articles.length === 0) {
+    return <DataUnavailable />
+  }
 
   return (
-    <ArticleStoreProvider initial={initial}>
+    <ArticleStoreProvider initial={articles}>
       <NewsList />
     </ArticleStoreProvider>
   )

@@ -2,10 +2,15 @@
 
 import Link from "next/link"
 import Image from "next/image"
-import { ArrowLeft, ExternalLink } from "lucide-react"
+import { ArrowLeft, ChevronDown, ExternalLink } from "lucide-react"
 import { SiteFooter } from "@/components/site-footer"
+import { SiteHeader } from "@/components/site-header"
 import { Badge } from "@/components/ui/badge"
-import { Button } from "@/components/ui/button"
+import {
+  Collapsible,
+  CollapsibleContent,
+  CollapsibleTrigger,
+} from "@/components/ui/collapsible"
 import { Separator } from "@/components/ui/separator"
 import { usePublicArticles } from "@/lib/article-store"
 import {
@@ -14,8 +19,11 @@ import {
   INDUSTRY_LABELS,
   MARKET_METRIC_ORDER,
   formatArticleDate,
+  formatJstDate,
+  formatJstDateTime,
   getAllSources,
 } from "@/lib/news-data"
+import { formatSummaryParagraphs } from "@/lib/summary-utils"
 import { ensureMinimumSummaryLength } from "@/lib/summary-utils"
 import { resolveArticleImageUrl } from "@/lib/image-utils"
 import { resolveSourceArticleUrl } from "@/lib/source-url-utils"
@@ -43,38 +51,26 @@ export function ArticleView({ id }: { id: string }) {
     .filter((item) => item.category === article.category && item.id !== article.id)
     .slice(0, 3)
   const detailedSummary = ensureMinimumSummaryLength(article.summary, 500)
+  const summaryParagraphs = formatSummaryParagraphs(detailedSummary)
   const imageSrc = resolveArticleImageUrl(article.imageUrl, article.id)
   const sourceArticleUrl = resolveSourceArticleUrl(article.sourceUrl, article.title)
   const allSources = getAllSources(article)
 
-  const leadType = article.industryTags.includes("talent") ? "hiring" : "expansion"
-
   return (
     <div className="min-h-screen bg-background">
-      <header className="border-b border-border bg-background">
-        <div className="mx-auto flex max-w-6xl items-center justify-between px-4 py-4 sm:px-6 lg:px-8">
-          <Link
-            href="/"
-            className="inline-flex items-center gap-2 text-sm text-muted-foreground transition-colors hover:text-foreground"
-          >
-            <ArrowLeft className="size-4" />
-            トップに戻る
-          </Link>
-          <Link href="/" className="text-sm font-semibold text-foreground">
-            India Business Dispatch
-          </Link>
-          <div className="flex gap-2">
-            <Button asChild variant="outline" size="sm">
-              <Link href="/pricing">価格</Link>
-            </Button>
-            <Button asChild size="sm">
-              <Link href={`/contact?leadType=${leadType}`}>お問い合わせ</Link>
-            </Button>
-          </div>
-        </div>
-      </header>
+      <SiteHeader />
 
-      <main className="mx-auto max-w-3xl px-4 py-10 sm:px-6 lg:px-8">
+      <div className="mx-auto max-w-3xl px-4 pt-6 sm:px-6 lg:px-8">
+        <Link
+          href="/"
+          className="inline-flex items-center gap-2 text-sm text-muted-foreground transition-colors hover:text-foreground"
+        >
+          <ArrowLeft className="size-4" />
+          トップに戻る
+        </Link>
+      </div>
+
+      <main className="mx-auto max-w-3xl px-4 py-6 sm:px-6 lg:px-8">
         <article className="space-y-8">
             <div className="space-y-4">
               <div className="flex flex-wrap items-center gap-2">
@@ -179,13 +175,15 @@ export function ArticleView({ id }: { id: string }) {
               </section>
             )}
 
-            <section className="rounded-3xl border border-border bg-card p-6">
-              <p className="text-sm font-medium uppercase tracking-[0.18em] text-accent">
-                要約
-              </p>
-              <p className="mt-4 whitespace-pre-line text-base leading-8 text-foreground">
-                {detailedSummary}
-              </p>
+            <section className="space-y-4 rounded-3xl border border-border bg-card p-6">
+              {summaryParagraphs.map((paragraph, idx) => (
+                <p
+                  key={idx}
+                  className="whitespace-pre-line text-base leading-8 text-foreground"
+                >
+                  {paragraph}
+                </p>
+              ))}
             </section>
 
             <section className="rounded-3xl border border-border bg-card p-6">
@@ -209,67 +207,83 @@ export function ArticleView({ id }: { id: string }) {
                 <p className="text-sm font-medium uppercase tracking-[0.18em] text-accent">
                   検証情報
                 </p>
-                <div className="mt-4 space-y-6">
-                  {allSources.map((src, idx) => (
-                    <div key={`${idx}-${src.originalUrl}`} className="space-y-3 text-sm leading-7 text-foreground">
-                      <div className="flex items-center gap-2">
-                        <Badge variant="outline" className="px-2 py-0.5 text-xs">
-                          {src.sourceName ?? `ソース${idx + 1}`}
-                        </Badge>
-                      </div>
-                      <p>
-                        <span className="font-medium">原文タイトル:</span>{" "}
-                        {src.originalTitle}
-                      </p>
-                      {src.originalPublishedAt && (
-                        <p>
-                          <span className="font-medium">原文公開日:</span>{" "}
-                          {src.originalPublishedAt}
-                        </p>
-                      )}
-                      {src.fetchedAt && (
-                        <p>
-                          <span className="font-medium">取得時刻:</span>{" "}
-                          {src.fetchedAt}
-                        </p>
-                      )}
-                      {src.extractedBy && (
-                        <p>
-                          <span className="font-medium">抽出方式:</span>{" "}
-                          {src.extractedBy}
-                        </p>
-                      )}
-                      {src.originalUrl && (
-                        <p>
-                          <span className="font-medium">原文URL:</span>{" "}
+                <div className="mt-4 space-y-4">
+                  {allSources.map((src, idx) => {
+                    const hasDetails =
+                      Boolean(src.fetchedAt) ||
+                      Boolean(src.extractedBy) ||
+                      (src.evidenceSnippets && src.evidenceSnippets.length > 0)
+
+                    return (
+                      <div key={`${idx}-${src.originalUrl}`} className="space-y-2 text-sm leading-7 text-foreground">
+                        <div className="flex flex-wrap items-center gap-2">
+                          <Badge variant="outline" className="px-2 py-0.5 text-xs">
+                            {src.sourceName ?? `ソース${idx + 1}`}
+                          </Badge>
+                          {src.originalPublishedAt && (
+                            <span className="text-xs text-muted-foreground">
+                              {src.originalPublishedAt.includes("T")
+                                ? formatJstDateTime(src.originalPublishedAt)
+                                : formatJstDate(src.originalPublishedAt)}
+                            </span>
+                          )}
+                        </div>
+                        {src.originalUrl ? (
                           <a
                             href={src.originalUrl}
                             target="_blank"
                             rel="noopener noreferrer"
-                            className="text-accent underline-offset-4 hover:underline"
+                            className="inline-flex items-start gap-1 text-foreground hover:text-accent hover:underline"
                           >
-                            {src.originalUrl}
+                            <span>{src.originalTitle}</span>
+                            <ExternalLink className="mt-1.5 size-3 shrink-0" />
                           </a>
-                        </p>
-                      )}
-                      {src.evidenceSnippets && src.evidenceSnippets.length > 0 && (
-                        <div className="space-y-2">
-                          <p className="text-sm font-medium text-foreground">原文抜粋</p>
-                          <ul className="space-y-2">
-                            {src.evidenceSnippets.map((snippet, sIdx) => (
-                              <li
-                                key={`${sIdx}-${snippet.slice(0, 20)}`}
-                                className="rounded-2xl border border-border bg-secondary/30 px-4 py-3 text-sm text-muted-foreground"
-                              >
-                                {snippet}
-                              </li>
-                            ))}
-                          </ul>
-                        </div>
-                      )}
-                      {idx < allSources.length - 1 && <Separator className="mt-2" />}
-                    </div>
-                  ))}
+                        ) : (
+                          <p>{src.originalTitle}</p>
+                        )}
+
+                        {hasDetails && (
+                          <Collapsible>
+                            <CollapsibleTrigger className="group inline-flex items-center gap-1 text-xs text-muted-foreground hover:text-foreground">
+                              <ChevronDown className="size-3 transition-transform group-data-[state=open]:rotate-180" />
+                              詳細を表示
+                            </CollapsibleTrigger>
+                            <CollapsibleContent className="mt-2 space-y-2 rounded-2xl border border-border bg-secondary/30 px-4 py-3 text-xs text-muted-foreground">
+                              {src.fetchedAt && (
+                                <p>
+                                  <span className="font-medium text-foreground">取得時刻:</span>{" "}
+                                  {formatJstDateTime(src.fetchedAt)}
+                                </p>
+                              )}
+                              {src.extractedBy && (
+                                <p>
+                                  <span className="font-medium text-foreground">抽出方式:</span>{" "}
+                                  {src.extractedBy}
+                                </p>
+                              )}
+                              {src.evidenceSnippets && src.evidenceSnippets.length > 0 && (
+                                <div className="space-y-1">
+                                  <p className="font-medium text-foreground">原文抜粋</p>
+                                  <ul className="space-y-1">
+                                    {src.evidenceSnippets.map((snippet, sIdx) => (
+                                      <li
+                                        key={`${sIdx}-${snippet.slice(0, 20)}`}
+                                        className="rounded-xl bg-card px-3 py-2"
+                                      >
+                                        {snippet}
+                                      </li>
+                                    ))}
+                                  </ul>
+                                </div>
+                              )}
+                            </CollapsibleContent>
+                          </Collapsible>
+                        )}
+
+                        {idx < allSources.length - 1 && <Separator className="mt-2" />}
+                      </div>
+                    )
+                  })}
                 </div>
               </section>
             )}

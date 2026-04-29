@@ -268,6 +268,41 @@ export function formatJstDate(value: string | undefined | null): string {
   return JST_DATE_FORMATTER.format(d)
 }
 
+const MS_PER_DAY = 86_400_000
+
+function recencyScore(publishedAt: string, now: number): number {
+  const ts = new Date(publishedAt).getTime()
+  if (Number.isNaN(ts)) return 0
+  const days = (now - ts) / MS_PER_DAY
+  if (days <= 1) return 100
+  if (days <= 3) return 70
+  if (days <= 7) return 40
+  if (days <= 30) return 15
+  return 0
+}
+
+export function computePopularityScore(
+  article: NewsArticle,
+  now: number = Date.now(),
+): number {
+  let score = recencyScore(article.publishedAt, now)
+
+  const sources = getAllSources(article)
+  if (sources.length >= 2) score += 30
+
+  if (article.imageUrl) score += 20
+
+  const summaryLen = article.summary?.length ?? 0
+  if (summaryLen >= 800) score += 10
+  if (summaryLen >= 1200) score += 5
+
+  if (article.implications && article.implications.length >= 3) score += 10
+
+  if (article.featured) score += 25
+
+  return score
+}
+
 export const NEWS_ARTICLES: NewsArticle[] = [
   {
     id: "1",

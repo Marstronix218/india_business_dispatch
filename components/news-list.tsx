@@ -1,8 +1,12 @@
 "use client"
 
 import { useDeferredValue, useMemo, useState } from "react"
-import { Filter } from "lucide-react"
-import { NewsCardFeatured, NewsCardGridItem } from "@/components/news-card"
+import { Search } from "lucide-react"
+import {
+  NewsCardHero,
+  NewsCardMosaic,
+  NewsCardTile,
+} from "@/components/news-card"
 import { SiteFooter } from "@/components/site-footer"
 import { SiteHeader } from "@/components/site-header"
 import { Input } from "@/components/ui/input"
@@ -12,6 +16,7 @@ import {
   CATEGORY_OPTIONS,
   INDUSTRY_LABELS,
   INDUSTRY_OPTIONS,
+  computePopularityScore,
   type Category,
   type IndustryTag,
 } from "@/lib/news-data"
@@ -27,9 +32,10 @@ export function NewsList() {
 
   const showIndustryFilter = INDUSTRY_VISIBLE_CATEGORIES.includes(activeCategory)
 
-  const filteredArticles = useMemo(() => {
+  const sortedArticles = useMemo(() => {
     const query = deferredSearchQuery.trim().toLowerCase()
     const industryFilterActive = showIndustryFilter && selectedIndustries.length > 0
+    const now = Date.now()
 
     return [...publicArticles]
       .filter((article) => {
@@ -54,6 +60,8 @@ export function NewsList() {
         return matchesCategory && matchesIndustry && matchesQuery
       })
       .sort((left, right) => {
+        const diff = computePopularityScore(right, now) - computePopularityScore(left, now)
+        if (diff !== 0) return diff
         return (
           new Date(right.publishedAt).getTime() -
           new Date(left.publishedAt).getTime()
@@ -67,11 +75,7 @@ export function NewsList() {
     showIndustryFilter,
   ])
 
-  const featuredArticle =
-    filteredArticles.find((article) => article.featured) ?? filteredArticles[0]
-  const gridArticles = filteredArticles.filter(
-    (article) => article.id !== featuredArticle?.id,
-  )
+  const [hero, mosaic1, mosaic2, ...tiles] = sortedArticles
 
   function selectCategory(category: Category | null) {
     setActiveCategory(category)
@@ -89,6 +93,7 @@ export function NewsList() {
   }
 
   const industryFilterApplied = showIndustryFilter && selectedIndustries.length > 0
+  const hasResults = sortedArticles.length > 0
 
   return (
     <div className="min-h-screen bg-background">
@@ -96,71 +101,51 @@ export function NewsList() {
 
       <main className="mx-auto max-w-7xl px-4 py-5 sm:px-6 lg:px-8">
         <div className="mb-3 flex flex-col gap-3 lg:flex-row lg:items-center">
-          <nav className="flex flex-1 flex-wrap gap-2">
-            <button
-              type="button"
+          <nav className="-mx-1 flex flex-1 gap-5 overflow-x-auto px-1 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
+            <CategoryLink
+              active={activeCategory === null}
               onClick={() => selectCategory(null)}
-              className={`rounded-full border px-4 py-2 text-sm transition-colors ${
-                activeCategory === null
-                  ? "border-accent bg-accent text-accent-foreground"
-                  : "border-border bg-card text-muted-foreground hover:text-foreground"
-              }`}
-            >
-              すべて
-            </button>
+              label="すべて"
+            />
             {CATEGORY_OPTIONS.map((category) => (
-              <button
+              <CategoryLink
                 key={category}
-                type="button"
+                active={activeCategory === category}
                 onClick={() => selectCategory(category)}
-                className={`rounded-full border px-4 py-2 text-sm transition-colors ${
-                  activeCategory === category
-                    ? "border-accent bg-accent text-accent-foreground"
-                    : "border-border bg-card text-muted-foreground hover:text-foreground"
-                }`}
-              >
-                {CATEGORY_LABELS[category]}
-              </button>
+                label={CATEGORY_LABELS[category]}
+              />
             ))}
           </nav>
 
-          <div className="relative w-full lg:w-80">
-            <Filter className="pointer-events-none absolute left-3 top-1/2 size-4 -translate-y-1/2 text-muted-foreground" />
+          <div className="relative w-full lg:w-72">
+            <Search className="pointer-events-none absolute left-3 top-1/2 size-4 -translate-y-1/2 text-muted-foreground" />
             <Input
               type="search"
               value={searchQuery}
               onChange={(event) => setSearchQuery(event.target.value)}
-              placeholder="タイトル、要約、示唆で検索"
+              placeholder="タイトル・要約で検索"
               className="pl-9"
             />
           </div>
         </div>
 
         {showIndustryFilter && (
-          <div className="mb-4 flex flex-wrap gap-2 rounded-2xl border border-border bg-card p-3">
-            {INDUSTRY_OPTIONS.map((tag) => {
-              const active = selectedIndustries.includes(tag)
-              return (
-                <button
-                  key={tag}
-                  type="button"
-                  onClick={() => toggleIndustry(tag)}
-                  className={`rounded-full border px-3 py-1.5 text-xs transition-colors ${
-                    active
-                      ? "border-accent bg-accent text-accent-foreground"
-                      : "border-border bg-background text-muted-foreground hover:text-foreground"
-                  }`}
-                >
-                  {INDUSTRY_LABELS[tag]}
-                </button>
-              )
-            })}
+          <div className="-mx-1 mb-4 flex gap-4 overflow-x-auto border-t border-border/60 px-1 pt-2 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
+            {INDUSTRY_OPTIONS.map((tag) => (
+              <CategoryLink
+                key={tag}
+                active={selectedIndustries.includes(tag)}
+                onClick={() => toggleIndustry(tag)}
+                label={INDUSTRY_LABELS[tag]}
+                size="sm"
+              />
+            ))}
           </div>
         )}
 
         {(activeCategory || industryFilterApplied || searchQuery) && (
           <div className="mb-4 flex items-center gap-3 text-sm text-muted-foreground">
-            <span>{filteredArticles.length}件を表示中</span>
+            <span>{sortedArticles.length}件を表示中</span>
             <button
               type="button"
               onClick={() => {
@@ -175,14 +160,29 @@ export function NewsList() {
           </div>
         )}
 
-        {featuredArticle ? (
-          <div className="space-y-3">
-            <NewsCardFeatured article={featuredArticle} />
-            <div className="grid gap-3 lg:grid-cols-2">
-              {gridArticles.map((article) => (
-                <NewsCardGridItem key={article.id} article={article} />
-              ))}
-            </div>
+        {hasResults ? (
+          <div className="space-y-4">
+            {hero && (
+              <div className="grid gap-4 lg:grid-cols-3">
+                <div className="lg:col-span-2">
+                  <NewsCardHero article={hero} />
+                </div>
+                {(mosaic1 || mosaic2) && (
+                  <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-1">
+                    {mosaic1 && <NewsCardMosaic article={mosaic1} />}
+                    {mosaic2 && <NewsCardMosaic article={mosaic2} />}
+                  </div>
+                )}
+              </div>
+            )}
+
+            {tiles.length > 0 && (
+              <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
+                {tiles.map((article) => (
+                  <NewsCardTile key={article.id} article={article} />
+                ))}
+              </div>
+            )}
           </div>
         ) : (
           <div className="rounded-2xl border border-border bg-card p-8 text-sm text-muted-foreground">
@@ -193,5 +193,32 @@ export function NewsList() {
 
       <SiteFooter />
     </div>
+  )
+}
+
+function CategoryLink({
+  active,
+  onClick,
+  label,
+  size = "default",
+}: {
+  active: boolean
+  onClick: () => void
+  label: string
+  size?: "default" | "sm"
+}) {
+  const padding = size === "sm" ? "py-1.5 text-xs" : "py-3 text-sm"
+  return (
+    <button
+      type="button"
+      onClick={onClick}
+      className={`whitespace-nowrap border-b-2 ${padding} transition-colors ${
+        active
+          ? "border-accent text-foreground"
+          : "border-transparent text-muted-foreground hover:text-foreground"
+      }`}
+    >
+      {label}
+    </button>
   )
 }

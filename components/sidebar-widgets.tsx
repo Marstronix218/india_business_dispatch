@@ -2,7 +2,7 @@
 
 import Link from "next/link"
 import { Separator } from "@/components/ui/separator"
-import { TrendingUp, Bookmark } from "lucide-react"
+import { TrendingUp, Bookmark, LineChart } from "lucide-react"
 import { CATEGORY_LABELS } from "@/lib/news-data"
 import { usePublicArticles } from "@/lib/article-store"
 
@@ -84,5 +84,40 @@ export function AboutWidget() {
         {"India Business Dispatch: 日本企業向けインド市場インテリジェンス"}
       </p>
     </div>
+  )
+}
+
+export function MarketIndicatorWidget() {
+  const articles = usePublicArticles()
+  const latest = articles.find((a) => a.marketSnapshot)
+  if (!latest?.marketSnapshot) return null
+  const m = latest.marketSnapshot
+  const metrics = [m.fx, m.equities, m.rates]
+
+  return (
+    <Link
+      href={`/article/${latest.id}`}
+      className="block bg-card rounded-lg border border-border p-4 hover:shadow-md transition-shadow"
+    >
+      <h3 className="text-sm font-bold text-foreground flex items-center gap-2 mb-3">
+        <LineChart className="size-4 text-accent" />
+        {"市況スナップショット"}
+      </h3>
+      <Separator className="mb-3" />
+      <ul className="flex flex-col gap-2">
+        {metrics.map((metric) => (
+          <li
+            key={metric.label}
+            className="flex items-baseline justify-between text-xs"
+          >
+            <span className="text-muted-foreground">{metric.label}</span>
+            <span className="font-mono tabular-nums text-foreground">
+              {metric.value}{" "}
+              <span className="text-muted-foreground">{metric.change}</span>
+            </span>
+          </li>
+        ))}
+      </ul>
+    </Link>
   )
 }

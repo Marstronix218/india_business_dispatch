@@ -1,10 +1,28 @@
 import Link from "next/link"
 import Image from "next/image"
 import {
+  CATEGORY_LABELS,
+  INDUSTRY_LABELS,
   formatArticleShortDate,
   type NewsArticle,
 } from "@/lib/news-data"
 import { resolveArticleImageUrl } from "@/lib/image-utils"
+
+function CardBadges({ article }: { article: NewsArticle }) {
+  const industry = article.industryTags[0]
+  return (
+    <div className="absolute left-3 top-3 z-10 flex flex-wrap gap-1">
+      <span className="rounded bg-orange-500 px-1.5 py-0.5 text-[10px] font-semibold tracking-wide text-white">
+        {CATEGORY_LABELS[article.category]}
+      </span>
+      {industry && article.category !== "column" && (
+        <span className="rounded bg-orange-500 px-1.5 py-0.5 text-[10px] font-semibold tracking-wide text-white">
+          {INDUSTRY_LABELS[industry]}
+        </span>
+      )}
+    </div>
+  )
+}
 
 function CardOverlay({
   article,
@@ -56,6 +74,7 @@ export function NewsCardHero({ article }: { article: NewsArticle }) {
       href={`/article/${article.id}`}
       className="group relative block aspect-[16/10] overflow-hidden rounded-2xl bg-muted shadow-sm transition-shadow hover:shadow-lg"
     >
+      <CardBadges article={article} />
       {imageSrc ? (
         <>
           <Image
@@ -83,14 +102,22 @@ export function NewsCardHero({ article }: { article: NewsArticle }) {
   )
 }
 
-export function NewsCardMosaic({ article }: { article: NewsArticle }) {
+export function NewsCardMosaic({
+  article,
+  stacked = false,
+}: {
+  article: NewsArticle
+  stacked?: boolean
+}) {
   const imageSrc = resolveArticleImageUrl(article.imageUrl, article.id)
+  const shape = stacked ? "h-full min-h-[6rem]" : "aspect-[4/3]"
 
   return (
     <Link
       href={`/article/${article.id}`}
-      className="group relative block aspect-[4/3] overflow-hidden rounded-2xl bg-muted shadow-sm transition-shadow hover:shadow-lg"
+      className={`group relative block ${shape} overflow-hidden rounded-2xl bg-muted shadow-sm transition-shadow hover:shadow-lg`}
     >
+      <CardBadges article={article} />
       {imageSrc ? (
         <>
           <Image
@@ -102,13 +129,13 @@ export function NewsCardMosaic({ article }: { article: NewsArticle }) {
           />
           <CardOverlay
             article={article}
-            titleClassName="line-clamp-2 text-base md:text-lg"
+            titleClassName="line-clamp-3 text-base md:text-lg"
           />
         </>
       ) : (
         <CardFallback
           article={article}
-          titleClassName="line-clamp-2 text-base md:text-lg"
+          titleClassName="line-clamp-3 text-base md:text-lg"
         />
       )}
     </Link>
@@ -123,6 +150,7 @@ export function NewsCardTile({ article }: { article: NewsArticle }) {
       href={`/article/${article.id}`}
       className="group relative block aspect-[16/10] overflow-hidden rounded-xl bg-muted shadow-sm transition-shadow hover:shadow-md"
     >
+      <CardBadges article={article} />
       {imageSrc ? (
         <>
           <Image
@@ -134,13 +162,13 @@ export function NewsCardTile({ article }: { article: NewsArticle }) {
           />
           <CardOverlay
             article={article}
-            titleClassName="line-clamp-2 text-sm md:text-base"
+            titleClassName="line-clamp-3 text-sm md:text-base"
           />
         </>
       ) : (
         <CardFallback
           article={article}
-          titleClassName="line-clamp-2 text-sm md:text-base"
+          titleClassName="line-clamp-3 text-sm md:text-base"
         />
       )}
     </Link>

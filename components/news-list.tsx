@@ -7,6 +7,10 @@ import {
   NewsCardMosaic,
   NewsCardTile,
 } from "@/components/news-card"
+import {
+  MarketIndicatorWidget,
+  TrendingWidget,
+} from "@/components/sidebar-widgets"
 import { SiteFooter } from "@/components/site-footer"
 import { SiteHeader } from "@/components/site-header"
 import { Input } from "@/components/ui/input"
@@ -16,9 +20,13 @@ import {
   CATEGORY_OPTIONS,
   INDUSTRY_LABELS,
   INDUSTRY_OPTIONS,
+  TOPIC_LABELS,
+  TOPIC_OPTIONS,
   computePopularityScore,
   type Category,
   type IndustryTag,
+  type NewsArticle,
+  type Topic,
 } from "@/lib/news-data"
 
 const INDUSTRY_VISIBLE_CATEGORIES: ReadonlyArray<Category | null> = [null, "economy"]
@@ -75,7 +83,54 @@ export function NewsList() {
     showIndustryFilter,
   ])
 
-  const [hero, mosaic1, mosaic2, ...tiles] = sortedArticles
+  const [hero, mosaic1, mosaic2, mosaic3, ...rest] = sortedArticles
+  const collabHighlights = sortedArticles
+    .filter((a) => a.japanIndiaCollaboration)
+    .slice(0, 3)
+  const tiles = rest
+
+  const filterActive =
+    activeCategory !== null ||
+    (showIndustryFilter && selectedIndustries.length > 0) ||
+    deferredSearchQuery.trim().length > 0
+
+  const effectiveSections = useMemo(() => {
+    if (filterActive) {
+      return tiles.length > 0
+        ? [{ key: "_all", label: "結果", articles: tiles }]
+        : []
+    }
+    const buckets = new Map<Topic, NewsArticle[]>()
+    const leftover: NewsArticle[] = []
+    for (const a of tiles) {
+      const t = (a.topics ?? [])[0]
+      if (t) {
+        const arr = buckets.get(t) ?? []
+        arr.push(a)
+        buckets.set(t, arr)
+      } else {
+        leftover.push(a)
+      }
+    }
+    const sections: { key: string; label: string; articles: NewsArticle[] }[] =
+      []
+    for (const t of TOPIC_OPTIONS) {
+      const items = buckets.get(t) ?? []
+      if (items.length >= 2) {
+        sections.push({ key: t, label: TOPIC_LABELS[t], articles: items })
+      } else if (items.length === 1) {
+        leftover.push(...items)
+      }
+    }
+    if (leftover.length > 0) {
+      sections.push({
+        key: "_other",
+        label: "最新ニュース",
+        articles: leftover,
+      })
+    }
+    return sections
+  }, [filterActive, tiles])
 
   function selectCategory(category: Category | null) {
     setActiveCategory(category)
@@ -161,26 +216,47 @@ export function NewsList() {
         )}
 
         {hasResults ? (
-          <div className="space-y-4">
+          <div className="space-y-8">
             {hero && (
-              <div className="grid gap-4 lg:grid-cols-3">
-                <div className="lg:col-span-2">
+              <div className="grid gap-1 lg:auto-rows-fr lg:grid-cols-3 lg:grid-rows-3">
+                <div className="lg:col-span-2 lg:row-span-3">
                   <NewsCardHero article={hero} />
                 </div>
-                {(mosaic1 || mosaic2) && (
-                  <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-1">
-                    {mosaic1 && <NewsCardMosaic article={mosaic1} />}
-                    {mosaic2 && <NewsCardMosaic article={mosaic2} />}
-                  </div>
-                )}
+                {mosaic1 && <NewsCardMosaic article={mosaic1} stacked />}
+                {mosaic2 && <NewsCardMosaic article={mosaic2} stacked />}
+                {mosaic3 && <NewsCardMosaic article={mosaic3} stacked />}
               </div>
             )}
 
-            {tiles.length > 0 && (
-              <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
-                {tiles.map((article) => (
-                  <NewsCardTile key={article.id} article={article} />
-                ))}
+            {!filterActive && collabHighlights.length > 0 && (
+              <section className="space-y-3">
+                <SectionHeader label="日印連携 / Japan-India Collaboration" />
+                <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+                  {collabHighlights.map((article) => (
+                    <NewsCardTile key={article.id} article={article} />
+                  ))}
+                </div>
+              </section>
+            )}
+
+            {effectiveSections.length > 0 && (
+              <div className="grid gap-6 lg:grid-cols-4">
+                <div className="space-y-8 lg:col-span-3">
+                  {effectiveSections.map((section) => (
+                    <section key={section.key} className="space-y-3">
+                      <SectionHeader label={section.label} />
+                      <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+                        {section.articles.map((article) => (
+                          <NewsCardTile key={article.id} article={article} />
+                        ))}
+                      </div>
+                    </section>
+                  ))}
+                </div>
+                <aside className="space-y-4 lg:col-span-1">
+                  <TrendingWidget />
+                  <MarketIndicatorWidget />
+                </aside>
               </div>
             )}
           </div>
@@ -192,6 +268,17 @@ export function NewsList() {
       </main>
 
       <SiteFooter />
+    </div>
+  )
+}
+
+function SectionHeader({ label }: { label: string }) {
+  return (
+    <div className="flex items-center gap-3">
+      <h2 className="text-xs font-bold uppercase tracking-wide text-foreground">
+        {label}
+      </h2>
+      <div className="h-px flex-1 bg-border" />
     </div>
   )
 }

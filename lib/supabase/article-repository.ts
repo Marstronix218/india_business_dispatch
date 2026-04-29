@@ -5,6 +5,7 @@ import {
   type IndustryTag,
   type NewsArticle,
   type SourceProvenance,
+  type Topic,
   type Visibility,
   type WorkflowStatus,
 } from "@/lib/news-data"
@@ -20,6 +21,8 @@ interface ArticleRow {
   published_at: string
   category: string
   industry_tags: string[]
+  topics: string[] | null
+  japan_india_collaboration: boolean | null
   implications: string[]
   content_type: string
   visibility: string
@@ -47,7 +50,8 @@ interface SourceRow {
 
 const ARTICLE_SELECT = `
   id, title, summary, source, source_url, published_at, category,
-  industry_tags, implications, content_type, visibility, workflow_status,
+  industry_tags, topics, japan_india_collaboration,
+  implications, content_type, visibility, workflow_status,
   image_url, featured, is_synthesized, dedupe_key,
   article_sources (
     article_id, source_name, original_title, original_url, canonical_url,
@@ -85,6 +89,8 @@ function rowToArticle(row: ArticleRow): NewsArticle {
     publishedAt: row.published_at,
     category: row.category as Category,
     industryTags: (row.industry_tags ?? []) as IndustryTag[],
+    topics: (row.topics ?? []) as Topic[],
+    japanIndiaCollaboration: row.japan_india_collaboration ?? false,
     implications: row.implications ?? [],
     contentType: row.content_type as ContentType,
     visibility: row.visibility as Visibility,

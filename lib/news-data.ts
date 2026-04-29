@@ -19,6 +19,14 @@ export type IndustryTag =
   | "entertainment"
   | "talent"
 
+export type Topic =
+  | "geopolitics"
+  | "event"
+  | "research"
+  | "environment"
+  | "startup"
+  | "ma_partnership"
+
 export type ContentType = "news" | "column" | "interview"
 export type Visibility = "public" | "member"
 export type WorkflowStatus = "published" | "review" | "failed"
@@ -59,6 +67,8 @@ export interface NewsArticle {
   publishedAt: string
   category: Category
   industryTags: IndustryTag[]
+  topics?: Topic[]
+  japanIndiaCollaboration?: boolean
   implications: string[]
   contentType: ContentType
   visibility: Visibility
@@ -149,6 +159,24 @@ export const INDUSTRY_OPTIONS: IndustryTag[] = [
   "education",
   "entertainment",
   "talent",
+]
+
+export const TOPIC_LABELS: Record<Topic, string> = {
+  geopolitics: "国際情勢",
+  event: "イベント・展示会",
+  research: "学会・研究",
+  environment: "環境・サステナビリティ",
+  startup: "スタートアップ",
+  ma_partnership: "M&A・提携",
+}
+
+export const TOPIC_OPTIONS: Topic[] = [
+  "geopolitics",
+  "event",
+  "research",
+  "environment",
+  "startup",
+  "ma_partnership",
 ]
 
 export const CATEGORY_OPTIONS: Category[] = [
@@ -314,6 +342,7 @@ export const NEWS_ARTICLES: NewsArticle[] = [
     publishedAt: "2026-04-15",
     category: "economy",
     industryTags: ["semiconductor", "machine_tools"],
+    topics: ["ma_partnership"],
     implications: [
       "勝機あり: 後工程装置、検査機、素材周辺の提案余地が大きい。",
       "注意点: 補助金条件は州ごとの差が大きく、立地比較が必須。",
@@ -375,6 +404,8 @@ export const NEWS_ARTICLES: NewsArticle[] = [
     publishedAt: "2026-04-12",
     category: "social",
     industryTags: ["education", "talent"],
+    topics: ["startup"],
+    japanIndiaCollaboration: true,
     implications: [
       "勝機あり: 直営よりも現地パートナー連携型の参入が成立しやすい。",
       "注意点: 価格感度が高く、都市別に商品構成を分ける必要がある。",
@@ -395,6 +426,8 @@ export const NEWS_ARTICLES: NewsArticle[] = [
     publishedAt: "2026-04-11",
     category: "culture",
     industryTags: ["entertainment"],
+    topics: ["startup"],
+    japanIndiaCollaboration: true,
     implications: [
       "勝機あり: 地域言語対応を前提にした配信・物販連動が有効。",
       "注意点: 一括で英語化するだけでは拡散しづらくなっている。",
@@ -454,6 +487,7 @@ export const NEWS_ARTICLES: NewsArticle[] = [
     publishedAt: "2026-04-09",
     category: "economy",
     industryTags: ["food", "chemicals"],
+    topics: ["environment"],
     implications: [
       "勝機あり: 高機能包装材や品質保証の仕組みは差別化余地が大きい。",
       "注意点: 現地調達比率の要求が強まっており、輸入一本足は不利。",
@@ -474,6 +508,7 @@ export const NEWS_ARTICLES: NewsArticle[] = [
     publishedAt: "2026-04-08",
     category: "economy",
     industryTags: ["agriculture", "logistics", "food"],
+    topics: ["environment"],
     implications: [
       "勝機あり: 温度記録、在庫見える化、品質保証の周辺需要が伸びる。",
       "注意点: 州またぎ流通では依然として道路事情の差が大きい。",
@@ -513,6 +548,7 @@ export const NEWS_ARTICLES: NewsArticle[] = [
     publishedAt: "2026-04-06",
     category: "economy",
     industryTags: ["steel", "automotive"],
+    topics: ["ma_partnership"],
     implications: [
       "注意点: 年次一括契約では価格変動を吸収しにくい局面に入っている。",
       "勝機あり: 代替材提案や共同購買の打診は商談の入口になりやすい。",

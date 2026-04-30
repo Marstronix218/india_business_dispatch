@@ -1,6 +1,6 @@
 import Link from "next/link"
 import { Button } from "@/components/ui/button"
-import { CATEGORY_OPTIONS, CATEGORY_LABELS } from "@/lib/news-data"
+import { TOPIC_SECTIONS } from "@/lib/news-data"
 
 const WEEKDAYS = ["日", "月", "火", "水", "木", "金", "土"]
 
@@ -44,13 +44,13 @@ export function SiteHeader() {
 
           <div className="flex items-center gap-4">
             <nav className="hidden items-center gap-5 text-sm lg:flex">
-              {CATEGORY_OPTIONS.map((category) => (
+              {TOPIC_SECTIONS.map((section) => (
                 <Link
-                  key={category}
-                  href={`/?category=${category}`}
+                  key={section.key}
+                  href={`/?section=${section.key}`}
                   className="text-muted-foreground transition-colors hover:text-accent"
                 >
-                  {CATEGORY_LABELS[category]}
+                  {section.label}
                 </Link>
               ))}
             </nav>

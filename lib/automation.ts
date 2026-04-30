@@ -255,6 +255,12 @@ function readIndiaRelevanceMin(): number {
   return Math.max(0, Math.min(3, Math.round(raw)))
 }
 
+function readJapaneseBusinessRelevanceMin(): number {
+  const raw = Number(process.env.JP_BUSINESS_RELEVANCE_MIN)
+  if (!Number.isFinite(raw)) return 2
+  return Math.max(0, Math.min(3, Math.round(raw)))
+}
+
 function buildSynthesizedDraft(
   cluster: RawSourceArticle[],
   primary: RawSourceArticle,
@@ -349,6 +355,15 @@ async function buildDraft(
         cluster,
         primary,
         `インド関連性が低い (score=${output.indiaRelevance.score}, 閾値=${minScore}): ${output.indiaRelevance.reason}`,
+      )
+    }
+
+    const minJpScore = readJapaneseBusinessRelevanceMin()
+    if (output.japaneseBusinessRelevance.score < minJpScore) {
+      return buildFailedDraft(
+        cluster,
+        primary,
+        `日本企業関心度が低い (score=${output.japaneseBusinessRelevance.score}, 閾値=${minJpScore}): ${output.japaneseBusinessRelevance.reason}`,
       )
     }
 

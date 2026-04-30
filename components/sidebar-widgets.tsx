@@ -2,12 +2,13 @@
 
 import Link from "next/link"
 import Image from "next/image"
-import { useState } from "react"
+import { useEffect, useState } from "react"
 import {
   formatArticleShortDate,
   type ImagePlaceholderTone,
   type NewsArticle,
 } from "@/lib/news-data"
+import type { MarketSnapshotLive } from "@/lib/market-data"
 import { usePublicArticles } from "@/lib/article-store"
 import { resolveArticleImageUrl } from "@/lib/image-utils"
 
@@ -78,30 +79,121 @@ export function TrendingWidget() {
   )
 }
 
+type IndicatorRow = {
+  label: string
+  sub: string
+  value: string
+  change: string
+  up: boolean
+}
+
+function rowsFromLive(snapshot: MarketSnapshotLive): IndicatorRow[] {
+  // pick top 4: INR/JPY, USD/INR, Nifty, Brent
+  const wanted = ["INR/JPY", "USD/INR", "Nifty 50", "Brent"]
+  const map = new Map(snapshot.items.map((q) => [q.label, q]))
+  return wanted
+    .map((w) => map.get(w))
+    .filter((q): q is NonNullable<typeof q> => Boolean(q))
+    .map((q) => ({
+      label: q.label,
+      sub: q.sub,
+      value: q.value,
+      change: q.change,
+      up: q.direction === "up",
+    }))
+}
+
+function formatLiveAsOf(ts: number): string {
+  const d = new Date(ts * 1000)
+  return d.toLocaleString("ja-JP", {
+    month: "numeric",
+    day: "numeric",
+    hour: "2-digit",
+    minute: "2-digit",
+    timeZone: "Asia/Tokyo",
+  })
+}
+
 export function MarketIndicatorWidget() {
   const articles = usePublicArticles()
-  const latest = articles.find((a) => a.marketSnapshot)
-  if (!latest?.marketSnapshot) return null
-  const m = latest.marketSnapshot
-  const rows: Array<{
-    label: string
-    sub: string
-    value: string
-    change: string
-    up: boolean
-  }> = [
-    { ...m.fx, sub: "₹/¥", up: m.fx.change.startsWith("+") },
-    { ...m.equities, sub: "指数", up: m.equities.change.startsWith("+") },
-    { ...m.rates, sub: "利回り%", up: m.rates.change.startsWith("+") },
-    { ...m.oil, sub: "USD/bbl", up: m.oil.change.startsWith("+") },
-  ]
+  const fallbackArticle = articles.find((a) => a.marketSnapshot)
+  const [snapshot, setSnapshot] = useState<MarketSnapshotLive | null>(null)
+  const [errored, setErrored] = useState(false)
+
+  useEffect(() => {
+    let cancelled = false
+    async function load() {
+      try {
+        const res = await fetch("/api/market/snapshot", { cache: "no-store" })
+        if (!res.ok) throw new Error(`HTTP ${res.status}`)
+        const data = (await res.json()) as MarketSnapshotLive
+        if (!cancelled) {
+          setSnapshot(data)
+          setErrored(false)
+        }
+      } catch {
+        if (!cancelled) setErrored(true)
+      }
+    }
+    load()
+    const id = setInterval(load, 5 * 60 * 1000)
+    return () => {
+      cancelled = true
+      clearInterval(id)
+    }
+  }, [])
+
+  let rows: IndicatorRow[] = []
+  let asOfLabel = ""
+  let href: string | null = null
+
+  if (snapshot) {
+    rows = rowsFromLive(snapshot)
+    asOfLabel = `ライブ · ${formatLiveAsOf(snapshot.asOf)}`
+  } else if (fallbackArticle?.marketSnapshot) {
+    const m = fallbackArticle.marketSnapshot
+    rows = [
+      { ...m.fx, sub: "₹/¥", up: m.fx.change.startsWith("+") },
+      { ...m.equities, sub: "指数", up: m.equities.change.startsWith("+") },
+      { ...m.rates, sub: "利回り%", up: m.rates.change.startsWith("+") },
+      { ...m.oil, sub: "USD/bbl", up: m.oil.change.startsWith("+") },
+    ]
+    asOfLabel = `スナップショット · ${m.fx.asOf}`
+    href = `/article/${fallbackArticle.id}`
+  } else if (errored) {
+    return null
+  } else {
+    // initial loading: render empty card with placeholder
+    rows = [
+      { label: "INR/JPY", sub: "₹/¥", value: "—", change: "—", up: false },
+      { label: "USD/INR", sub: "$/₹", value: "—", change: "—", up: false },
+      { label: "Nifty 50", sub: "指数", value: "—", change: "—", up: false },
+      { label: "Brent", sub: "USD/bbl", value: "—", change: "—", up: false },
+    ]
+    asOfLabel = "ロード中…"
+  }
+
+  const Wrapper: React.FC<{ children: React.ReactNode }> = ({ children }) =>
+    href ? (
+      <Link
+        href={href}
+        className="block rounded-md border border-border bg-card p-5 transition-shadow hover:shadow-md"
+      >
+        {children}
+      </Link>
+    ) : (
+      <div className="block rounded-md border border-border bg-card p-5">
+        {children}
+      </div>
+    )
 
   return (
-    <Link
-      href={`/article/${latest.id}`}
-      className="block rounded-md border border-border bg-card p-5 transition-shadow hover:shadow-md"
-    >
-      <RailHead label="マーケット指標" en="MARKET" icon="📊" />
+    <Wrapper>
+      <RailHead
+        label={snapshot ? "マーケット指標(ライブ)" : "マーケット指標"}
+        en="MARKET"
+        icon="📊"
+      />
       <ul className="divide-y divide-border">
         {rows.map((row) => (
           <li
@@ -131,9 +223,9 @@ export function MarketIndicatorWidget() {
         ))}
       </ul>
       <p className="mt-3 font-mono text-[9px] tracking-wider text-muted-foreground">
-        {m.fx.asOf}
+        {asOfLabel}
       </p>
-    </Link>
+    </Wrapper>
   )
 }
 
@@ -145,6 +237,8 @@ type City = {
   gdp: string
   note: string
   tone: ImagePlaceholderTone
+  imageUrl?: string
+  imageCredit?: string
 }
 
 const CITIES: City[] = [
@@ -154,26 +248,71 @@ const CITIES: City[] = [
     tag: "金融・港湾",
     pop: "2,041万",
     gdp: "$3,100億",
-    note: "西部回廊の物流ハブ。港湾混雑が緩和傾向。",
+    note: "西部回廊の物流ハブ。港湾混雑が緩和傾向で完成車・部品の輸送リードタイムが安定化。",
     tone: "warm",
+    imageUrl:
+      "https://upload.wikimedia.org/wikipedia/commons/2/2b/Mumbai_Bandra-Worli_Sea_Link.jpg",
+    imageCredit: "Bandra-Worli Sea Link · Wikimedia",
+  },
+  {
+    name: "Delhi NCR",
+    jp: "デリー首都圏",
+    tag: "二輪・電装・行政",
+    pop: "3,200万",
+    gdp: "$3,700億",
+    note: "Honda・Yamaha・Maruti Suzuki の量産拠点が集中。中央官庁との折衝・規制対応の起点。",
+    tone: "cool",
+    imageUrl:
+      "https://upload.wikimedia.org/wikipedia/commons/4/40/Jama_Masjid_2011.jpg",
+    imageCredit: "Jama Masjid · Wikimedia",
   },
   {
     name: "Bengaluru",
     jp: "ベンガルール",
-    tag: "IT・スタートアップ",
+    tag: "IT・GCC・R&D",
     pop: "1,330万",
     gdp: "$1,100億",
-    note: "GCC設置と研究開発拠点が集積。女性エンジニア比率が上昇。",
+    note: "日系GCC(グローバル・キャパビリティ・センター)設置の最有力候補。女性エンジニア比率が上昇傾向。",
     tone: "green",
+    imageUrl:
+      "https://upload.wikimedia.org/wikipedia/commons/c/cd/View_from_Visvesvaraya_Industrial_and_Technological_Museum_%282025%29_02.jpg",
+    imageCredit: "Bengaluru skyline · Wikimedia",
   },
   {
     name: "Chennai",
     jp: "チェンナイ",
-    tag: "自動車・製造",
+    tag: "自動車・部品",
     pop: "1,170万",
     gdp: "$840億",
-    note: "日系自動車・部品の集積地。タミル・ナードゥ州の人材定着策が進む。",
+    note: "日系自動車・部品の集積地。タミル・ナードゥ州が人材定着・電動化補助の制度運用で先行。",
     tone: "cool",
+    imageUrl:
+      "https://upload.wikimedia.org/wikipedia/commons/3/32/Chennai_Central.jpg",
+    imageCredit: "Chennai Central · Wikimedia",
+  },
+  {
+    name: "Pune",
+    jp: "プネ",
+    tag: "製造・自動車",
+    pop: "720万",
+    gdp: "$690億",
+    note: "Bajaj・Volkswagen・Tata Motors の重工業ベルト。日系工作機械・部品メーカーの集積も進む。",
+    tone: "warm",
+    imageUrl:
+      "https://upload.wikimedia.org/wikipedia/commons/thumb/c/c5/Pune_West_skyline_-_March_2017.jpg/1280px-Pune_West_skyline_-_March_2017.jpg",
+    imageCredit: "Pune West skyline · Wikimedia",
+  },
+  {
+    name: "Hyderabad",
+    jp: "ハイデラバード",
+    tag: "IT・製薬・半導体",
+    pop: "1,100万",
+    gdp: "$750億",
+    note: "テランガナ州主導でファブ誘致と製薬クラスターを拡大。日系製薬・素材の現地化検討が増加。",
+    tone: "green",
+    imageUrl:
+      "https://upload.wikimedia.org/wikipedia/commons/8/88/Downtown_hyderabad_drone.png",
+    imageCredit: "Hyderabad downtown · Wikimedia",
   },
   {
     name: "Ahmedabad",
@@ -181,8 +320,23 @@ const CITIES: City[] = [
     tag: "半導体・化学",
     pop: "850万",
     gdp: "$680億",
-    note: "グジャラート州の半導体クラスター形成が加速。",
+    note: "グジャラート州の半導体クラスター形成が加速。GIFT City で金融・データセンター特区も拡張中。",
     tone: "warm",
+    imageUrl:
+      "https://upload.wikimedia.org/wikipedia/commons/thumb/8/8e/Sabarmati_riverside.jpg/1280px-Sabarmati_riverside.jpg",
+    imageCredit: "Sabarmati Riverside · Wikimedia",
+  },
+  {
+    name: "Kolkata",
+    jp: "コルカタ",
+    tag: "東部物流・素材",
+    pop: "1,500万",
+    gdp: "$1,500億",
+    note: "東インド・ASEAN接続の起点。鉄鋼・化学の集積地で、北東州への物流ハブとしての存在感が再評価。",
+    tone: "cool",
+    imageUrl:
+      "https://upload.wikimedia.org/wikipedia/commons/d/d7/Kolkata_maidan.jpg",
+    imageCredit: "Kolkata Maidan · Wikimedia",
   },
 ]
 
@@ -194,18 +348,35 @@ export function CitySpotlightWidget() {
     <div className="rounded-md border border-border bg-card p-5">
       <RailHead label="都市スポットライト" en="CITY FOCUS" icon="📍" />
       <div className="relative mb-3 aspect-[16/10] overflow-hidden rounded-sm bg-muted">
-        <div
-          className={`absolute inset-0 ${TONE_TO_STRIPE[city.tone]} grid place-items-center`}
-        >
-          <span className="font-mono text-[10px] uppercase tracking-[0.18em] text-foreground/40">
-            {city.name.toLowerCase()} skyline
-          </span>
-        </div>
+        {city.imageUrl ? (
+          <Image
+            src={city.imageUrl}
+            alt={`${city.name} cityscape`}
+            fill
+            className="object-cover"
+            sizes="320px"
+          />
+        ) : (
+          <div
+            className={`absolute inset-0 ${TONE_TO_STRIPE[city.tone]} grid place-items-center`}
+          >
+            <span className="font-mono text-[10px] uppercase tracking-[0.18em] text-foreground/40">
+              {city.name.toLowerCase()} skyline
+            </span>
+          </div>
+        )}
         <div className="absolute bottom-2 left-2">
           <span className="bg-foreground px-2 py-0.5 font-mono text-[10px] tracking-wider text-background">
             {city.tag}
           </span>
         </div>
+        {city.imageCredit && (
+          <div className="absolute right-1.5 top-1.5">
+            <span className="bg-black/40 px-1.5 py-0.5 font-mono text-[8px] tracking-wider text-white/80">
+              {city.imageCredit}
+            </span>
+          </div>
+        )}
       </div>
       <div className="flex items-baseline justify-between">
         <h4 className="font-serif text-xl font-bold">{city.jp}</h4>

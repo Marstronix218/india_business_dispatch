@@ -17,6 +17,11 @@ export interface IndiaRelevance {
   reason: string
 }
 
+export interface JapaneseBusinessRelevance {
+  score: 0 | 1 | 2 | 3
+  reason: string
+}
+
 export interface SynthesisOutput {
   title: string
   summary: string
@@ -25,6 +30,7 @@ export interface SynthesisOutput {
   category: string
   citedSources: string[]
   indiaRelevance: IndiaRelevance
+  japaneseBusinessRelevance: JapaneseBusinessRelevance
 }
 
 export interface LLMClient {

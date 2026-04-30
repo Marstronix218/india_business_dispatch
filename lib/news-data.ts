@@ -179,7 +179,14 @@ export const TOPIC_OPTIONS: Topic[] = [
   "ma_partnership",
 ]
 
-export type TopicSectionKey = "industry" | "policy" | "people" | "culture_market"
+export type TopicSectionKey =
+  | "strategy"
+  | "policy"
+  | "industry"
+  | "talent"
+  | "market"
+  | "japan_india"
+  | "column"
 
 export interface TopicSection {
   key: TopicSectionKey
@@ -191,11 +198,11 @@ export interface TopicSection {
 
 export const TOPIC_SECTIONS: TopicSection[] = [
   {
-    key: "industry",
-    label: "産業・サプライチェーン",
-    enLabel: "Industry & Supply Chain",
-    kicker: "製造、半導体、物流、調達の現場で起きている変化。",
-    accent: "oklch(0.42 0.12 150)",
+    key: "strategy",
+    label: "進出戦略",
+    enLabel: "Expansion Strategy",
+    kicker: "市場参入、消費者動向、文化文脈——進出判断に効くマクロ視点。",
+    accent: "oklch(0.55 0.18 30)",
   },
   {
     key: "policy",
@@ -205,38 +212,61 @@ export const TOPIC_SECTIONS: TopicSection[] = [
     accent: "oklch(0.55 0.12 250)",
   },
   {
-    key: "people",
-    label: "社会・人材",
-    enLabel: "Society & Talent",
-    kicker: "消費者、教育、採用市場——人と組織のリアル。",
+    key: "industry",
+    label: "産業動向",
+    enLabel: "Industry Trends",
+    kicker: "製造、半導体、物流、調達の現場で起きている変化。",
+    accent: "oklch(0.42 0.12 150)",
+  },
+  {
+    key: "talent",
+    label: "人材・労務",
+    enLabel: "Talent & HR",
+    kicker: "採用、定着、教育、評価——人と組織のリアル。",
     accent: "oklch(0.68 0.21 42)",
   },
   {
-    key: "culture_market",
-    label: "文化・市況",
-    enLabel: "Culture & Market",
-    kicker: "ローカル文脈と日次の経済指標を実務に接続。",
+    key: "market",
+    label: "市況・指標",
+    enLabel: "Market & Indicators",
+    kicker: "為替・株式・金利・原油の4指標と日次の経済データ。",
     accent: "oklch(0.50 0.11 30)",
+  },
+  {
+    key: "japan_india",
+    label: "日印連携",
+    enLabel: "Japan-India Bridge",
+    kicker: "日系企業の進出・提携・投資の最前線。",
+    accent: "oklch(0.60 0.20 25)",
+  },
+  {
+    key: "column",
+    label: "編集部・コラム",
+    enLabel: "Editorial & Columns",
+    kicker: "編集部・寄稿・インタビューによる一次知見。",
+    accent: "oklch(0.45 0.10 280)",
   },
 ]
 
 export function deriveTopicSection(article: NewsArticle): TopicSectionKey {
+  if (article.japanIndiaCollaboration) return "japan_india"
+  if (article.category === "column") return "column"
   if (article.category === "regulation") return "policy"
-  if (article.category === "social") return "people"
-  if (article.category === "culture" || article.category === "market") {
-    return "culture_market"
+  if (article.category === "market") return "market"
+  if (
+    article.industryTags.some((tag) =>
+      (["talent", "education"] as IndustryTag[]).includes(tag),
+    )
+  ) {
+    return "talent"
   }
-  if (article.category === "column") {
-    if (
-      article.industryTags.some((tag) =>
-        (["talent", "education"] as IndustryTag[]).includes(tag),
-      )
-    ) {
-      return "people"
-    }
+  if (article.category === "social" || article.category === "culture") {
+    return "strategy"
+  }
+  if (article.category === "economy" && article.industryTags.length > 0) {
     return "industry"
   }
-  return "industry"
+  return "strategy"
 }
 
 export type ImagePlaceholderTone = "warm" | "cool" | "green" | "default"

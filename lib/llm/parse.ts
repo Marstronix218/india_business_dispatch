@@ -1,4 +1,8 @@
-import type { IndiaRelevance, SynthesisOutput } from "./types"
+import type {
+  IndiaRelevance,
+  JapaneseBusinessRelevance,
+  SynthesisOutput,
+} from "./types"
 import { LLMError } from "./types"
 
 export function extractJsonObject(raw: string): string {
@@ -38,12 +42,24 @@ export function parseSynthesisOutput(raw: string): SynthesisOutput {
   const category = asString(obj.category)
   const citedSources = asStringArray(obj.citedSources ?? [])
   const indiaRelevance = asIndiaRelevance(obj.indiaRelevance)
+  const japaneseBusinessRelevance = asJapaneseBusinessRelevance(
+    obj.japaneseBusinessRelevance,
+  )
 
   if (!title || !summary || implications.length === 0 || !category) {
     throw new LLMError("LLM応答に必須フィールドが欠落しています")
   }
 
-  return { title, summary, implications, industryTags, category, citedSources, indiaRelevance }
+  return {
+    title,
+    summary,
+    implications,
+    industryTags,
+    category,
+    citedSources,
+    indiaRelevance,
+    japaneseBusinessRelevance,
+  }
 }
 
 function asIndiaRelevance(value: unknown): IndiaRelevance {
@@ -55,6 +71,27 @@ function asIndiaRelevance(value: unknown): IndiaRelevance {
   const score = Number.isFinite(rawScore) ? Math.max(0, Math.min(3, Math.round(rawScore))) : 2
   const reason = asString(obj.reason) || "判定理由なし"
   return { score: score as IndiaRelevance["score"], reason }
+}
+
+function asJapaneseBusinessRelevance(
+  value: unknown,
+): JapaneseBusinessRelevance {
+  if (!value || typeof value !== "object") {
+    return {
+      score: 2,
+      reason: "japaneseBusinessRelevance未指定のため既定値で扱う",
+    }
+  }
+  const obj = value as Record<string, unknown>
+  const rawScore = typeof obj.score === "number" ? obj.score : Number(obj.score)
+  const score = Number.isFinite(rawScore)
+    ? Math.max(0, Math.min(3, Math.round(rawScore)))
+    : 2
+  const reason = asString(obj.reason) || "判定理由なし"
+  return {
+    score: score as JapaneseBusinessRelevance["score"],
+    reason,
+  }
 }
 
 function asString(value: unknown): string {

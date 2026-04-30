@@ -1,6 +1,7 @@
 "use client"
 
-import { useDeferredValue, useMemo, useState } from "react"
+import { useDeferredValue, useEffect, useMemo, useState } from "react"
+import { useSearchParams } from "next/navigation"
 import { Search } from "lucide-react"
 import { NewsCardHero, NewsCardMosaic } from "@/components/news-card"
 import { TopicCarousel } from "@/components/topic-carousel"
@@ -20,32 +21,40 @@ import { SiteHeader } from "@/components/site-header"
 import { Input } from "@/components/ui/input"
 import { usePublicArticles } from "@/lib/article-store"
 import {
-  CATEGORY_LABELS,
-  CATEGORY_OPTIONS,
   INDUSTRY_LABELS,
   INDUSTRY_OPTIONS,
   TOPIC_SECTIONS,
   computePopularityScore,
   deriveTopicSection,
-  type Category,
   type IndustryTag,
   type NewsArticle,
   type TopicSectionKey,
 } from "@/lib/news-data"
 
-const INDUSTRY_VISIBLE_CATEGORIES: ReadonlyArray<Category | null> = [
+const INDUSTRY_VISIBLE_SECTIONS: ReadonlyArray<TopicSectionKey | null> = [
   null,
-  "economy",
+  "industry",
+  "strategy",
 ]
 
 export function NewsList() {
-  const [activeCategory, setActiveCategory] = useState<Category | null>(null)
+  const searchParams = useSearchParams()
+  const [activeSection, setActiveSection] = useState<TopicSectionKey | null>(
+    null,
+  )
   const [selectedIndustries, setSelectedIndustries] = useState<IndustryTag[]>([])
   const [searchQuery, setSearchQuery] = useState("")
   const deferredSearchQuery = useDeferredValue(searchQuery)
   const publicArticles = usePublicArticles()
 
-  const showIndustryFilter = INDUSTRY_VISIBLE_CATEGORIES.includes(activeCategory)
+  useEffect(() => {
+    const param = searchParams.get("section")
+    if (!param) return
+    const valid = TOPIC_SECTIONS.some((s) => s.key === param)
+    if (valid) setActiveSection(param as TopicSectionKey)
+  }, [searchParams])
+
+  const showIndustryFilter = INDUSTRY_VISIBLE_SECTIONS.includes(activeSection)
 
   const sortedArticles = useMemo(() => {
     const query = deferredSearchQuery.trim().toLowerCase()
@@ -55,8 +64,8 @@ export function NewsList() {
 
     return [...publicArticles]
       .filter((article) => {
-        const matchesCategory =
-          activeCategory === null || article.category === activeCategory
+        const matchesSection =
+          activeSection === null || deriveTopicSection(article) === activeSection
 
         const matchesIndustry =
           !industryFilterActive ||
@@ -73,7 +82,7 @@ export function NewsList() {
 
         const matchesQuery = !query || haystack.includes(query)
 
-        return matchesCategory && matchesIndustry && matchesQuery
+        return matchesSection && matchesIndustry && matchesQuery
       })
       .sort((left, right) => {
         const diff =
@@ -85,7 +94,7 @@ export function NewsList() {
         )
       })
   }, [
-    activeCategory,
+    activeSection,
     deferredSearchQuery,
     publicArticles,
     selectedIndustries,
@@ -98,23 +107,26 @@ export function NewsList() {
     .slice(0, 3)
 
   const filterActive =
-    activeCategory !== null ||
+    activeSection !== null ||
     (showIndustryFilter && selectedIndustries.length > 0) ||
     deferredSearchQuery.trim().length > 0
 
   const sectionsBySection = useMemo(() => {
+    const collabIds = new Set(collabHighlights.map((a) => a.id))
     const buckets = new Map<TopicSectionKey, NewsArticle[]>()
     for (const section of TOPIC_SECTIONS) buckets.set(section.key, [])
     for (const article of rest) {
+      // skip articles already shown in JapanIndiaBand to avoid duplication
+      if (!filterActive && collabIds.has(article.id)) continue
       const key = deriveTopicSection(article)
       buckets.get(key)?.push(article)
     }
     return buckets
-  }, [rest])
+  }, [rest, collabHighlights, filterActive])
 
-  function selectCategory(category: Category | null) {
-    setActiveCategory(category)
-    if (!INDUSTRY_VISIBLE_CATEGORIES.includes(category)) {
+  function selectSection(section: TopicSectionKey | null) {
+    setActiveSection(section)
+    if (!INDUSTRY_VISIBLE_SECTIONS.includes(section)) {
       setSelectedIndustries([])
     }
   }
@@ -135,8 +147,8 @@ export function NewsList() {
     <div className="min-h-screen bg-background">
       <SiteHeader />
       <FilterRibbon
-        activeCategory={activeCategory}
-        onSelectCategory={selectCategory}
+        activeSection={activeSection}
+        onSelectSection={selectSection}
         searchQuery={searchQuery}
         onSearchChange={setSearchQuery}
       />
@@ -157,13 +169,13 @@ export function NewsList() {
           </div>
         )}
 
-        {(activeCategory || industryFilterApplied || searchQuery) && (
+        {(activeSection || industryFilterApplied || searchQuery) && (
           <div className="mb-4 flex items-center gap-3 text-sm text-muted-foreground">
             <span>{sortedArticles.length}件を表示中</span>
             <button
               type="button"
               onClick={() => {
-                setActiveCategory(null)
+                setActiveSection(null)
                 setSelectedIndustries([])
                 setSearchQuery("")
               }}
@@ -286,13 +298,13 @@ function ArchiveBlock() {
 }
 
 function FilterRibbon({
-  activeCategory,
-  onSelectCategory,
+  activeSection,
+  onSelectSection,
   searchQuery,
   onSearchChange,
 }: {
-  activeCategory: Category | null
-  onSelectCategory: (category: Category | null) => void
+  activeSection: TopicSectionKey | null
+  onSelectSection: (section: TopicSectionKey | null) => void
   searchQuery: string
   onSearchChange: (value: string) => void
 }) {
@@ -303,16 +315,16 @@ function FilterRibbon({
           FILTER
         </span>
         <CategoryLink
-          active={activeCategory === null}
-          onClick={() => onSelectCategory(null)}
+          active={activeSection === null}
+          onClick={() => onSelectSection(null)}
           label="すべて"
         />
-        {CATEGORY_OPTIONS.map((category) => (
+        {TOPIC_SECTIONS.map((section) => (
           <CategoryLink
-            key={category}
-            active={activeCategory === category}
-            onClick={() => onSelectCategory(category)}
-            label={CATEGORY_LABELS[category]}
+            key={section.key}
+            active={activeSection === section.key}
+            onClick={() => onSelectSection(section.key)}
+            label={section.label}
           />
         ))}
         <div className="ml-auto flex shrink-0 items-center gap-2 text-muted-foreground">

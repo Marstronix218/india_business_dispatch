@@ -179,6 +179,87 @@ export const TOPIC_OPTIONS: Topic[] = [
   "ma_partnership",
 ]
 
+export type TopicSectionKey = "industry" | "policy" | "people" | "culture_market"
+
+export interface TopicSection {
+  key: TopicSectionKey
+  label: string
+  enLabel: string
+  kicker: string
+  accent: string
+}
+
+export const TOPIC_SECTIONS: TopicSection[] = [
+  {
+    key: "industry",
+    label: "産業・サプライチェーン",
+    enLabel: "Industry & Supply Chain",
+    kicker: "製造、半導体、物流、調達の現場で起きている変化。",
+    accent: "oklch(0.42 0.12 150)",
+  },
+  {
+    key: "policy",
+    label: "規制・制度",
+    enLabel: "Policy & Regulation",
+    kicker: "進出・採用・通関に効く制度改定をまとめて把握。",
+    accent: "oklch(0.55 0.12 250)",
+  },
+  {
+    key: "people",
+    label: "社会・人材",
+    enLabel: "Society & Talent",
+    kicker: "消費者、教育、採用市場——人と組織のリアル。",
+    accent: "oklch(0.68 0.21 42)",
+  },
+  {
+    key: "culture_market",
+    label: "文化・市況",
+    enLabel: "Culture & Market",
+    kicker: "ローカル文脈と日次の経済指標を実務に接続。",
+    accent: "oklch(0.50 0.11 30)",
+  },
+]
+
+export function deriveTopicSection(article: NewsArticle): TopicSectionKey {
+  if (article.category === "regulation") return "policy"
+  if (article.category === "social") return "people"
+  if (article.category === "culture" || article.category === "market") {
+    return "culture_market"
+  }
+  if (article.category === "column") {
+    if (
+      article.industryTags.some((tag) =>
+        (["talent", "education"] as IndustryTag[]).includes(tag),
+      )
+    ) {
+      return "people"
+    }
+    return "industry"
+  }
+  return "industry"
+}
+
+export type ImagePlaceholderTone = "warm" | "cool" | "green" | "default"
+
+export function deriveImageTone(article: NewsArticle): ImagePlaceholderTone {
+  switch (article.category) {
+    case "economy":
+      return "green"
+    case "regulation":
+      return "cool"
+    case "social":
+      return "warm"
+    case "culture":
+      return "warm"
+    case "market":
+      return "cool"
+    case "column":
+      return "green"
+    default:
+      return "default"
+  }
+}
+
 export const CATEGORY_OPTIONS: Category[] = [
   "economy",
   "regulation",

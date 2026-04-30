@@ -1,16 +1,26 @@
 import type { Metadata, Viewport } from 'next'
-import { Noto_Sans_JP, Geist_Mono } from 'next/font/google'
+import { Noto_Sans_JP, Noto_Serif_JP, JetBrains_Mono } from 'next/font/google'
 import { Analytics } from '@vercel/analytics/next'
 import { Toaster } from 'sonner'
 import './globals.css'
 
 const notoSansJP = Noto_Sans_JP({
   subsets: ['latin'],
-  weight: ['400', '500', '700'],
+  weight: ['400', '500', '600', '700', '800'],
   variable: '--font-noto-sans-jp',
 })
 
-const _geistMono = Geist_Mono({ subsets: ['latin'] })
+const notoSerifJP = Noto_Serif_JP({
+  subsets: ['latin'],
+  weight: ['600', '700', '900'],
+  variable: '--font-noto-serif-jp',
+})
+
+const jetbrainsMono = JetBrains_Mono({
+  subsets: ['latin'],
+  weight: ['400', '500'],
+  variable: '--font-jetbrains-mono',
+})
 
 export const metadata: Metadata = {
   title: 'India Business Dispatch | インド・ビジネス・ディスパッチ',
@@ -33,7 +43,7 @@ export default function RootLayout({
     <html lang="ja" suppressHydrationWarning>
       <body
         suppressHydrationWarning
-        className={`${notoSansJP.variable} font-sans antialiased`}
+        className={`${notoSansJP.variable} ${notoSerifJP.variable} ${jetbrainsMono.variable} font-sans antialiased`}
       >
         {children}
         <Toaster richColors position="top-right" />

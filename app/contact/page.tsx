@@ -17,7 +17,10 @@ export default async function ContactPage({
 
       <main className="mx-auto max-w-5xl space-y-6 px-4 py-10 sm:px-6 lg:px-8">
         <div className="space-y-2">
-          <h1 className="text-3xl font-semibold tracking-tight text-foreground">
+          <div className="font-mono text-[11px] tracking-[0.22em] text-muted-foreground">
+            // CONTACT
+          </div>
+          <h1 className="font-serif text-3xl font-bold tracking-tight text-foreground">
             お問い合わせ
           </h1>
           <p className="max-w-3xl text-sm leading-7 text-muted-foreground">

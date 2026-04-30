@@ -84,7 +84,7 @@ export const PRICING_PLANS: PricingPlan[] = [
       "法人向け資料請求の優先案内",
     ],
     ctaLabel: "無料会員登録",
-    ctaHref: "/pricing#free-member",
+    ctaHref: "/pricing",
   },
   {
     id: "corp-50",

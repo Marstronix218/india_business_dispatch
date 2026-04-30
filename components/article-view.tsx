@@ -3,6 +3,7 @@
 import Link from "next/link"
 import Image from "next/image"
 import { ArrowLeft, ChevronDown, ExternalLink } from "lucide-react"
+import { NewsCardTile } from "@/components/news-card"
 import { SiteFooter } from "@/components/site-footer"
 import { SiteHeader } from "@/components/site-header"
 import { Badge } from "@/components/ui/badge"
@@ -80,10 +81,10 @@ export function ArticleView({ id }: { id: string }) {
               </div>
 
               <div className="space-y-3">
-                <h1 className="text-4xl font-semibold leading-tight tracking-tight text-foreground">
+                <h1 className="text-balance font-serif text-4xl font-bold leading-tight tracking-tight text-foreground">
                   {article.title}
                 </h1>
-                <div className="flex flex-wrap items-center gap-3 text-sm text-muted-foreground">
+                <div className="flex flex-wrap items-center gap-3 font-mono text-xs text-muted-foreground">
                   <span>{formatArticleDate(article.publishedAt)}</span>
                   {allSources.length > 0 ? (
                     <div className="flex flex-wrap items-center gap-2">
@@ -136,7 +137,7 @@ export function ArticleView({ id }: { id: string }) {
 
             {article.marketSnapshot && (
               <section className="rounded-3xl border border-border bg-card p-6">
-                <p className="text-sm font-medium uppercase tracking-[0.18em] text-accent">
+                <p className="font-mono text-[11px] font-semibold uppercase tracking-[0.22em] text-accent">
                   為替・市況
                 </p>
                 <div className="mt-4 grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
@@ -187,7 +188,7 @@ export function ArticleView({ id }: { id: string }) {
             </section>
 
             <section className="rounded-3xl border border-border bg-card p-6">
-              <p className="text-sm font-medium uppercase tracking-[0.18em] text-accent">
+              <p className="font-mono text-[11px] font-semibold uppercase tracking-[0.22em] text-accent">
                 日本企業への示唆
               </p>
               <ul className="mt-4 space-y-3">
@@ -204,7 +205,7 @@ export function ArticleView({ id }: { id: string }) {
 
             {allSources.length > 0 && (
               <section className="rounded-3xl border border-border bg-card p-6">
-                <p className="text-sm font-medium uppercase tracking-[0.18em] text-accent">
+                <p className="font-mono text-[11px] font-semibold uppercase tracking-[0.22em] text-accent">
                   検証情報
                 </p>
                 <div className="mt-4 space-y-4">
@@ -290,7 +291,7 @@ export function ArticleView({ id }: { id: string }) {
 
             {article.industryTags.length > 0 && (
               <section className="rounded-3xl border border-border bg-card p-6">
-                <p className="text-sm font-medium uppercase tracking-[0.18em] text-accent">
+                <p className="font-mono text-[11px] font-semibold uppercase tracking-[0.22em] text-accent">
                   業界タグ
                 </p>
                 <div className="mt-4 flex flex-wrap gap-2">
@@ -304,31 +305,22 @@ export function ArticleView({ id }: { id: string }) {
             )}
 
             {relatedArticles.length > 0 && (
-              <section className="rounded-3xl border border-border bg-card p-6">
-                <div className="mb-4 space-y-2">
-                  <p className="text-sm font-medium uppercase tracking-[0.18em] text-accent">
-                    Related
-                  </p>
-                  <h2 className="text-2xl font-semibold text-foreground">
-                    関連記事
-                  </h2>
+              <section>
+                <div className="mb-4 flex items-end justify-between gap-4">
+                  <div className="flex items-baseline gap-3">
+                    <span className="size-2.5 rounded-sm bg-accent" />
+                    <h2 className="font-serif text-2xl font-bold tracking-tight">
+                      関連記事
+                    </h2>
+                    <span className="font-mono text-[10px] tracking-[0.2em] text-muted-foreground">
+                      // RELATED
+                    </span>
+                  </div>
                 </div>
-                <div className="space-y-4">
-                  {relatedArticles.map((related, index) => (
-                    <div key={related.id}>
-                      <Link
-                        href={`/article/${related.id}`}
-                        className="text-base font-semibold text-foreground hover:text-primary"
-                      >
-                        {related.title}
-                      </Link>
-                      <p className="mt-1 line-clamp-3 text-sm leading-7 text-muted-foreground">
-                        {related.summary}
-                      </p>
-                      {index < relatedArticles.length - 1 && (
-                        <Separator className="mt-4" />
-                      )}
-                    </div>
+                <div className="topic-rule mb-6" />
+                <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
+                  {relatedArticles.map((related) => (
+                    <NewsCardTile key={related.id} article={related} />
                   ))}
                 </div>
               </section>

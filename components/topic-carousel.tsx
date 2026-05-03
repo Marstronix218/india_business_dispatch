@@ -44,7 +44,7 @@ export function TopicCarousel({ articles }: { articles: NewsArticle[] }) {
   if (articles.length === 0) return null
 
   return (
-    <div className="relative min-w-0 overflow-hidden">
+    <div className="relative min-w-0 overflow-x-hidden">
       <div
         ref={scrollerRef}
         className="-mx-4 flex min-w-0 snap-x snap-mandatory gap-4 overflow-x-auto scroll-smooth px-4 pb-1 [scrollbar-width:none] sm:-mx-0 sm:gap-6 sm:px-0 [&::-webkit-scrollbar]:hidden"

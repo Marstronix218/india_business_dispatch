@@ -3,6 +3,7 @@
 import Link from "next/link"
 import Image from "next/image"
 import { useEffect, useState } from "react"
+import { ChevronLeft, ChevronRight } from "lucide-react"
 import {
   formatArticleShortDate,
   type ImagePlaceholderTone,
@@ -267,6 +268,15 @@ const CITIES: City[] = [
     imageCredit: "Jama Masjid · Wikimedia",
   },
   {
+    name: "Gurgaon",
+    jp: "グルガオン",
+    tag: "IT・GCC・R&D",
+    pop: "150万",
+    gdp: "$420億",
+    note: "NCR の高層オフィス集積地。日系を含む GCC や外資系本社機能の受け皿として存在感が強い。",
+    tone: "cool",
+  },
+  {
     name: "Bengaluru",
     jp: "ベンガルール",
     tag: "IT・GCC・R&D",
@@ -343,6 +353,8 @@ const CITIES: City[] = [
 export function CitySpotlightWidget() {
   const [index, setIndex] = useState(0)
   const city = CITIES[index]
+  const canGoBack = index > 0
+  const canGoForward = index < CITIES.length - 1
 
   return (
     <div className="rounded-md border border-border bg-card p-5">
@@ -401,19 +413,25 @@ export function CitySpotlightWidget() {
       <p className="mt-3 text-xs leading-relaxed text-muted-foreground">
         {city.note}
       </p>
-      <div className="mt-3 flex items-center gap-1.5">
-        {CITIES.map((_, i) => (
-          <button
-            type="button"
-            key={i}
-            onClick={() => setIndex(i)}
-            aria-label={`city ${i + 1}`}
-            className={
-              "h-1.5 rounded-full transition-all " +
-              (i === index ? "w-6 bg-accent" : "w-1.5 bg-border")
-            }
-          />
-        ))}
+      <div className="mt-3 flex items-center justify-end gap-1.5">
+        <button
+          type="button"
+          onClick={() => setIndex((current) => Math.max(0, current - 1))}
+          disabled={!canGoBack}
+          aria-label="前の都市"
+          className="grid size-7 place-items-center rounded-full border border-border bg-background text-foreground transition-colors hover:border-accent hover:text-accent disabled:cursor-not-allowed disabled:opacity-30"
+        >
+          <ChevronLeft className="size-3.5" />
+        </button>
+        <button
+          type="button"
+          onClick={() => setIndex((current) => Math.min(CITIES.length - 1, current + 1))}
+          disabled={!canGoForward}
+          aria-label="次の都市"
+          className="grid size-7 place-items-center rounded-full border border-border bg-background text-foreground transition-colors hover:border-accent hover:text-accent disabled:cursor-not-allowed disabled:opacity-30"
+        >
+          <ChevronRight className="size-3.5" />
+        </button>
       </div>
     </div>
   )

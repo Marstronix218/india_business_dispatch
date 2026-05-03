@@ -48,10 +48,23 @@ export function NewsList() {
   const publicArticles = usePublicArticles()
 
   useEffect(() => {
-    const param = searchParams.get("section")
-    if (!param) return
-    const valid = TOPIC_SECTIONS.some((s) => s.key === param)
-    if (valid) setActiveSection(param as TopicSectionKey)
+    const sectionParam = searchParams.get("section")
+    const nextSection = TOPIC_SECTIONS.some((s) => s.key === sectionParam)
+      ? (sectionParam as TopicSectionKey)
+      : null
+
+    const nextTags = searchParams
+      .getAll("tag")
+      .filter((tag): tag is IndustryTag =>
+        INDUSTRY_OPTIONS.includes(tag as IndustryTag),
+      )
+
+    setActiveSection(nextSection)
+    setSelectedIndustries(
+      nextSection === null || INDUSTRY_VISIBLE_SECTIONS.includes(nextSection)
+        ? nextTags
+        : [],
+    )
   }, [searchParams])
 
   const showIndustryFilter = INDUSTRY_VISIBLE_SECTIONS.includes(activeSection)
@@ -203,8 +216,8 @@ export function NewsList() {
               <JapanIndiaBand articles={collabHighlights} />
             )}
 
-            <div className="grid gap-10 lg:grid-cols-4">
-              <div className="space-y-12 lg:col-span-3">
+            <div className="grid min-w-0 gap-10 lg:grid-cols-4">
+              <div className="min-w-0 space-y-12 lg:col-span-3">
                 {filterActive ? (
                   <FilteredResults articles={rest} />
                 ) : (
@@ -212,7 +225,7 @@ export function NewsList() {
                     const items = sectionsBySection.get(section.key) ?? []
                     if (items.length === 0) return null
                     return (
-                      <section key={section.key}>
+                      <section key={section.key} className="min-w-0">
                         <TopicHeader section={section} count={items.length} />
                         <TopicCarousel articles={items} />
                       </section>
@@ -248,7 +261,7 @@ export function NewsList() {
 function FilteredResults({ articles }: { articles: NewsArticle[] }) {
   if (articles.length === 0) return null
   return (
-    <section>
+    <section className="min-w-0">
       <div className="mb-4">
         <div className="mb-2 flex items-end justify-between gap-4">
           <div className="flex items-baseline gap-3">

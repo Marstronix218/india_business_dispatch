@@ -296,8 +296,13 @@ export function ArticleView({ id }: { id: string }) {
                 </p>
                 <div className="mt-4 flex flex-wrap gap-2">
                   {article.industryTags.map((tag) => (
-                    <Badge key={tag} variant="outline" className="px-3 py-1">
-                      {INDUSTRY_LABELS[tag]}
+                    <Badge
+                      key={tag}
+                      asChild
+                      variant="outline"
+                      className="px-3 py-1"
+                    >
+                      <Link href={`/?tag=${tag}`}>{INDUSTRY_LABELS[tag]}</Link>
                     </Badge>
                   ))}
                 </div>

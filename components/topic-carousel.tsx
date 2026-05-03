@@ -44,16 +44,16 @@ export function TopicCarousel({ articles }: { articles: NewsArticle[] }) {
   if (articles.length === 0) return null
 
   return (
-    <div className="relative">
+    <div className="relative min-w-0 overflow-hidden">
       <div
         ref={scrollerRef}
-        className="-mx-4 flex snap-x snap-mandatory gap-6 overflow-x-auto scroll-smooth px-4 pb-1 [scrollbar-width:none] sm:-mx-0 sm:px-0 [&::-webkit-scrollbar]:hidden"
+        className="-mx-4 flex min-w-0 snap-x snap-mandatory gap-4 overflow-x-auto scroll-smooth px-4 pb-1 [scrollbar-width:none] sm:-mx-0 sm:gap-6 sm:px-0 [&::-webkit-scrollbar]:hidden"
       >
         {articles.map((article) => (
           <div
             key={article.id}
             data-carousel-card
-            className="w-[82%] shrink-0 snap-start sm:w-[calc(50%-12px)] lg:w-[calc((100%-48px)/3)]"
+            className="w-[82vw] max-w-[22rem] shrink-0 snap-start sm:w-[calc(50%-12px)] sm:max-w-none lg:w-[calc((100%-48px)/3)]"
           >
             <NewsCardTile article={article} />
           </div>

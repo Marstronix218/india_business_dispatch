@@ -275,6 +275,9 @@ const CITIES: City[] = [
     gdp: "$420億",
     note: "NCR の高層オフィス集積地。日系を含む GCC や外資系本社機能の受け皿として存在感が強い。",
     tone: "cool",
+    imageUrl:
+      "https://commons.wikimedia.org/wiki/Special:FilePath/DLF%20Cyber%20Hub,%20Gurgaon%202.jpg",
+    imageCredit: "DLF Cyber Hub, Gurgaon · Wikimedia",
   },
   {
     name: "Bengaluru",

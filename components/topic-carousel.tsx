@@ -37,7 +37,7 @@ export function TopicCarousel({ articles }: { articles: NewsArticle[] }) {
     if (!el) return
     const card = el.querySelector<HTMLElement>("[data-carousel-card]")
     const cardWidth = card?.offsetWidth ?? el.clientWidth / 3
-    const gap = 24
+    const gap = parseFloat(getComputedStyle(el).columnGap) || 0
     el.scrollBy({ left: direction * (cardWidth + gap) * 3, behavior: "smooth" })
   }
 

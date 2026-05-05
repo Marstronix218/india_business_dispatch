@@ -36,6 +36,7 @@ export interface SynthesisOutput {
   referenceUrls: ReferenceUrl[]
   indiaRelevance: IndiaRelevance
   japaneseBusinessRelevance: JapaneseBusinessRelevance
+  imagePrompt: string
 }
 
 export interface LLMClient {

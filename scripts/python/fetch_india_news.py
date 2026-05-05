@@ -218,7 +218,6 @@ def parse_rss(xml_bytes: bytes, connector: Connector, limit: int) -> list[dict[s
                 "url": canonical_url,
                 "publishedAt": parse_rfc822_date(pub_date_raw),
                 "bodyText": body if body else title,
-                "imageUrl": f"https://picsum.photos/seed/{abs(hash(title)) % 100000}/1200/675",
                 "originalTitle": title,
                 "originalPublishedAt": parse_rfc822_date(pub_date_raw),
                 "canonicalUrl": canonical_url,
@@ -305,10 +304,6 @@ def fetch_gnews_api(limit: int) -> tuple[list[dict[str, Any]], str | None]:
                 "url": canonical_url,
                 "publishedAt": published_at,
                 "bodyText": body if body else title,
-                "imageUrl": (
-                    row.get("image")
-                    or f"https://picsum.photos/seed/{abs(hash(title)) % 100000}/1200/675"
-                ),
                 "originalTitle": title,
                 "originalPublishedAt": published_at,
                 "canonicalUrl": canonical_url,
@@ -369,7 +364,6 @@ def main() -> int:
                     "url": connector.url,
                     "publishedAt": today,
                     "bodyText": body,
-                    "imageUrl": f"https://picsum.photos/seed/{connector.connector_id}/1200/675",
                     "originalTitle": f"Fallback India brief from {connector.source}",
                     "originalPublishedAt": today,
                     "canonicalUrl": connector.url,

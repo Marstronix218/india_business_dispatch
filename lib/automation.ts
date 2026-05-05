@@ -16,6 +16,11 @@ import {
   type SynthesisOutput,
   type SynthesisSource,
 } from "@/lib/llm"
+import {
+  ImageGenerationError,
+  getImageClient,
+  type ImageClient,
+} from "@/lib/image-gen"
 import { resolveOgImage } from "@/lib/scrapers/og-image"
 import { fetchSimilarArticles } from "@/lib/scrapers/fetch-india-news"
 
@@ -326,6 +331,7 @@ async function ensureImageUrl(cluster: RawSourceArticle[]): Promise<void> {
 async function buildDraft(
   cluster: RawSourceArticle[],
   llm: LLMClient | null,
+  imageClient: ImageClient | null,
 ): Promise<PipelineDraft> {
   const primary = pickPrimary(cluster)
 
@@ -340,8 +346,6 @@ async function buildDraft(
   if (!cleanText(primary.bodyText ?? "")) {
     return buildFailedDraft(cluster, primary, "本文が空のため合成不可")
   }
-
-  await ensureImageUrl(cluster)
 
   if (!llm) {
     return buildFallbackDraft(cluster, primary, "LLM未設定、旧方式で暫定生成")
@@ -380,6 +384,19 @@ async function buildDraft(
       )
     }
 
+    const generatedImageUrl = await tryGenerateImage(
+      imageClient,
+      output.imagePrompt,
+      primary.title,
+    )
+    if (generatedImageUrl) {
+      primary.imageUrl = generatedImageUrl
+      primary.imageSourceUrl = undefined
+    } else {
+      primary.imageUrl = undefined
+      primary.imageSourceUrl = undefined
+    }
+
     return buildSynthesizedDraft(cluster, primary, output)
   } catch (error) {
     const msg = error instanceof LLMError
@@ -387,6 +404,26 @@ async function buildDraft(
       : error instanceof Error ? error.message : String(error)
     console.error(`[automation] LLM合成失敗 (title="${primary.title}"): ${msg}`)
     return buildFallbackDraft(cluster, primary, `LLM合成失敗: ${msg}`)
+  }
+}
+
+async function tryGenerateImage(
+  imageClient: ImageClient | null,
+  prompt: string,
+  fallbackTitle: string,
+): Promise<string | null> {
+  if (!imageClient) return null
+  const positive = (prompt && prompt.trim().length > 0) ? prompt.trim() : fallbackTitle
+  if (!positive) return null
+  try {
+    const result = await imageClient.generate({ prompt: positive })
+    return result.imageUrl
+  } catch (error) {
+    const msg = error instanceof ImageGenerationError
+      ? error.message
+      : error instanceof Error ? error.message : String(error)
+    console.error(`[automation] 画像生成失敗 (prompt="${positive.slice(0, 80)}"): ${msg}`)
+    return null
   }
 }
 
@@ -455,7 +492,7 @@ async function mapWithConcurrency<T, R>(
 
 export async function runAutomationPipeline(
   rawArticles: RawSourceArticle[],
-  deps?: { llm?: LLMClient | null },
+  deps?: { llm?: LLMClient | null; imageClient?: ImageClient | null },
 ): Promise<PipelineResult> {
   let llm: LLMClient | null
   if (deps && "llm" in deps) {
@@ -467,6 +504,19 @@ export async function runAutomationPipeline(
       const msg = error instanceof Error ? error.message : String(error)
       console.warn(`[automation] LLMクライアント初期化失敗、fallback経路のみで動作: ${msg}`)
       llm = null
+    }
+  }
+
+  let imageClient: ImageClient | null
+  if (deps && "imageClient" in deps) {
+    imageClient = deps.imageClient ?? null
+  } else {
+    try {
+      imageClient = getImageClient()
+    } catch (error) {
+      const msg = error instanceof Error ? error.message : String(error)
+      console.warn(`[automation] 画像生成クライアント初期化失敗、画像なしで動作: ${msg}`)
+      imageClient = null
     }
   }
 
@@ -494,7 +544,7 @@ export async function runAutomationPipeline(
   const clusters = enableAugment
     ? await augmentSingletonClusters(trimmed, deduped, augmentLimit)
     : trimmed
-  const drafts = await mapWithConcurrency(clusters, 3, (cluster) => buildDraft(cluster, llm))
+  const drafts = await mapWithConcurrency(clusters, 3, (cluster) => buildDraft(cluster, llm, imageClient))
 
   return drafts.reduce<PipelineResult>(
     (acc, draft) => {

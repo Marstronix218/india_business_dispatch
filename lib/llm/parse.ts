@@ -47,6 +47,7 @@ export function parseSynthesisOutput(raw: string, input?: SynthesisInput): Synth
   const japaneseBusinessRelevance = asJapaneseBusinessRelevance(
     obj.japaneseBusinessRelevance,
   )
+  const imagePrompt = asString(obj.imagePrompt) || title
 
   if (!title || !summary || implications.length === 0 || !category) {
     throw new LLMError("LLM応答に必須フィールドが欠落しています")
@@ -61,6 +62,7 @@ export function parseSynthesisOutput(raw: string, input?: SynthesisInput): Synth
     referenceUrls,
     indiaRelevance,
     japaneseBusinessRelevance,
+    imagePrompt,
   }
 }
 

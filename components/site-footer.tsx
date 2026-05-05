@@ -51,6 +51,11 @@ export function SiteFooter() {
                   お問い合わせ
                 </Link>
               </li>
+              <li>
+                <Link href="/terms" className="transition-opacity hover:opacity-100">
+                  利用規約・プライバシーポリシー
+                </Link>
+              </li>
             </ul>
           </div>
         </div>

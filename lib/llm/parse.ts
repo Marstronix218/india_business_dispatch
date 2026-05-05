@@ -1,9 +1,11 @@
 import type {
   IndiaRelevance,
   JapaneseBusinessRelevance,
+  ReferenceUrl,
   SynthesisOutput,
 } from "./types"
 import { LLMError } from "./types"
+import type { SynthesisInput } from "./types"
 
 export function extractJsonObject(raw: string): string {
   const trimmed = raw.trim()
@@ -22,7 +24,7 @@ export function extractJsonObject(raw: string): string {
   throw new LLMError("LLM応答にJSONオブジェクトが見つかりません")
 }
 
-export function parseSynthesisOutput(raw: string): SynthesisOutput {
+export function parseSynthesisOutput(raw: string, input?: SynthesisInput): SynthesisOutput {
   let parsed: unknown
   try {
     parsed = JSON.parse(extractJsonObject(raw))
@@ -40,7 +42,7 @@ export function parseSynthesisOutput(raw: string): SynthesisOutput {
   const implications = asStringArray(obj.implications)
   const industryTags = asStringArray(obj.industryTags ?? [])
   const category = asString(obj.category)
-  const citedSources = asStringArray(obj.citedSources ?? [])
+  const referenceUrls = asReferenceUrls(obj.referenceUrls, input)
   const indiaRelevance = asIndiaRelevance(obj.indiaRelevance)
   const japaneseBusinessRelevance = asJapaneseBusinessRelevance(
     obj.japaneseBusinessRelevance,
@@ -56,10 +58,30 @@ export function parseSynthesisOutput(raw: string): SynthesisOutput {
     implications,
     industryTags,
     category,
-    citedSources,
+    referenceUrls,
     indiaRelevance,
     japaneseBusinessRelevance,
   }
+}
+
+function asReferenceUrls(value: unknown, input?: SynthesisInput): ReferenceUrl[] {
+  const fromLLM: ReferenceUrl[] = []
+  if (Array.isArray(value)) {
+    for (const item of value) {
+      if (!item || typeof item !== "object") continue
+      const obj = item as Record<string, unknown>
+      const title = asString(obj.title)
+      const url = asString(obj.url)
+      if (title && url) fromLLM.push({ title, url })
+    }
+  }
+  if (fromLLM.length > 0) return fromLLM
+  if (input) {
+    return input.cluster
+      .filter((s) => s.title && s.sourceUrl)
+      .map((s) => ({ title: s.title, url: s.sourceUrl }))
+  }
+  return []
 }
 
 function asIndiaRelevance(value: unknown): IndiaRelevance {

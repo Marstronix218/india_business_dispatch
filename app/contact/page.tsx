@@ -1,7 +1,7 @@
 import { LeadCaptureForm } from "@/components/lead-capture-form"
 import { SiteFooter } from "@/components/site-footer"
 import { SiteHeader } from "@/components/site-header"
-import { type LeadType } from "@/lib/site-config"
+import { LEAD_TYPE_LABELS, type LeadType } from "@/lib/site-config"
 
 export default async function ContactPage({
   searchParams,
@@ -9,7 +9,10 @@ export default async function ContactPage({
   searchParams: Promise<{ leadType?: LeadType }>
 }) {
   const params = await searchParams
-  const initialLeadType = params.leadType === "hiring" ? "hiring" : "expansion"
+  const initialLeadType =
+    params.leadType && params.leadType in LEAD_TYPE_LABELS
+      ? params.leadType
+      : "expansion"
 
   return (
     <div className="min-h-screen bg-background">
@@ -32,7 +35,7 @@ export default async function ContactPage({
           <LeadCaptureForm
             initialLeadType={initialLeadType}
             title="インド進出・採用の相談フォーム"
-            description="進出相談か採用相談かを選び、状況がわかる範囲で入力してください。"
+            description="相談種別を選び、状況がわかる範囲で入力してください。"
           />
         </div>
       </main>

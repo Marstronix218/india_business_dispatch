@@ -47,12 +47,13 @@ export function LeadCaptureForm({
     ...EMPTY_INQUIRY,
     leadType: initialLeadType,
   })
+  const [isSubmitting, setIsSubmitting] = useState(false)
 
   useEffect(() => {
     setForm((current) => ({ ...current, leadType: initialLeadType }))
   }, [initialLeadType])
 
-  function handleSubmit(event: React.FormEvent<HTMLFormElement>) {
+  async function handleSubmit(event: React.FormEvent<HTMLFormElement>) {
     event.preventDefault()
 
     if (
@@ -65,17 +66,42 @@ export function LeadCaptureForm({
       return
     }
 
-    toast.success("お問い合わせを受け付けました。24時間以内を目安にご連絡します。")
-    setForm({
-      ...EMPTY_INQUIRY,
-      leadType: form.leadType,
-    })
+    setIsSubmitting(true)
+    try {
+      const response = await fetch("/api/leads", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify(form),
+      })
+
+      if (!response.ok) {
+        throw new Error("lead submit failed")
+      }
+
+      toast.success("お問い合わせを受け付けました。24時間以内を目安にご連絡します。")
+      setForm({
+        ...EMPTY_INQUIRY,
+        leadType: form.leadType,
+      })
+    } catch {
+      toast.error("送信できませんでした。時間をおいて再度お試しください。")
+    } finally {
+      setIsSubmitting(false)
+    }
   }
 
-  const messagePlaceholder =
-    form.leadType === "expansion"
-      ? "想定時期、検討中の州、事業テーマ、必要な調査内容を入力してください。"
-      : "採用したい職種、採用人数、現地採用か駐在採用か、課題を入力してください。"
+  const messagePlaceholder = (() => {
+    switch (form.leadType) {
+      case "expansion":
+        return "想定時期、検討中の州、事業テーマ、必要な調査内容を入力してください。"
+      case "hiring":
+        return "採用したい職種、採用人数、現地採用か駐在採用か、課題を入力してください。"
+      case "other":
+        return "ご相談内容、背景、現在の課題を入力してください。"
+    }
+  })()
 
   return (
     <form onSubmit={handleSubmit} className="space-y-4">
@@ -203,7 +229,9 @@ export function LeadCaptureForm({
         <p className="text-xs leading-relaxed text-muted-foreground">
           最低6か月の法人パイロットを前提に、初月無料の想定でご案内します。
         </p>
-        <Button type="submit">相談内容を送信</Button>
+        <Button type="submit" disabled={isSubmitting}>
+          {isSubmitting ? "送信中..." : "相談内容を送信"}
+        </Button>
       </div>
     </form>
   )

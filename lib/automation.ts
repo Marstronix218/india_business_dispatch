@@ -39,6 +39,7 @@ export interface RawSourceArticle {
   publishedAt: string
   bodyText: string
   imageUrl?: string
+  imageSourceUrl?: string
   originalTitle?: string
   originalPublishedAt?: string
   canonicalUrl?: string
@@ -269,7 +270,10 @@ function buildSynthesizedDraft(
   const category = normalizeLegacyCategory(output.category || primary.legacyCategory || "economy")
   const llmTags = normalizeTagList(output.industryTags)
   const industryTags = llmTags.length > 0 ? llmTags : primary.industryHints ?? []
-  const sources = cluster.map(toProvenance)
+  const sources: SourceProvenance[] = output.referenceUrls.map((ref) => ({
+    originalTitle: ref.title,
+    originalUrl: ref.url,
+  }))
 
   const workflowStatus =
     category === "regulation" && cluster.length === 1 ? "review" : "published"
@@ -282,7 +286,7 @@ function buildSynthesizedDraft(
     provenance: sources[0],
     sources,
     source: cluster.length > 1 ? `${primary.source}、他${cluster.length - 1}件` : primary.source,
-    sourceUrl: primary.url,
+    sourceUrl: primary.imageSourceUrl ?? primary.url,
     publishedAt: primary.publishedAt,
     category,
     industryTags,
@@ -296,14 +300,23 @@ function buildSynthesizedDraft(
 }
 
 async function ensureImageUrl(cluster: RawSourceArticle[]): Promise<void> {
+  for (const article of cluster) {
+    if (article.imageUrl && !article.imageSourceUrl && isLikelyArticleUrl(article.url)) {
+      article.imageSourceUrl = article.url
+    }
+  }
   if (cluster.some((a) => a.imageUrl && a.imageUrl.length > 0)) return
   for (const article of cluster) {
     if (!isLikelyArticleUrl(article.url)) continue
     const image = await resolveOgImage(article.url)
     if (image) {
       article.imageUrl = image
+      article.imageSourceUrl = article.url
       for (const other of cluster) {
-        if (!other.imageUrl) other.imageUrl = image
+        if (!other.imageUrl) {
+          other.imageUrl = image
+          other.imageSourceUrl = article.url
+        }
       }
       return
     }

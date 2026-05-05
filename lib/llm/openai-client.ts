@@ -42,7 +42,7 @@ export class OpenAIClient implements LLMClient {
         throw new LLMError("OpenAI応答が空です")
       }
 
-      return parseSynthesisOutput(content)
+      return parseSynthesisOutput(content, input)
     } catch (error) {
       if (error instanceof LLMError) throw error
       throw new LLMError(

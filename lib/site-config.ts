@@ -1,4 +1,4 @@
-export type LeadType = "expansion" | "hiring"
+export type LeadType = "expansion" | "hiring" | "other"
 export type CompanySize = "under_50" | "under_100" | "over_100"
 export type DigestFrequency = "daily" | "weekly"
 
@@ -35,6 +35,7 @@ export interface PricingPlan {
 export const LEAD_TYPE_LABELS: Record<LeadType, string> = {
   expansion: "インド進出を相談したい",
   hiring: "インド人材を採用したい",
+  other: "その他",
 }
 
 export const COMPANY_SIZE_LABELS: Record<CompanySize, string> = {
@@ -56,15 +57,15 @@ export const MEMBERSHIP_BENEFITS = [
 
 export const EDITORIAL_PILLARS = [
   "RSS/API優先でソースを取得",
-  "約500文字の日本語要約を公開",
+  "独自の視点で再構成した日本語記事を公開",
   "日本企業への示唆を3点以内で整理",
 ]
 
 export const AUTOMATION_STAGES = [
   "収集",
   "重複排除",
-  "翻訳",
-  "短要約生成",
+  "事実抽出",
+  "記事再構成",
   "示唆生成",
   "カテゴリ・業界タグ付与",
   "公開",

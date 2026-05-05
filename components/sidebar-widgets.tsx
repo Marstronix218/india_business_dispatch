@@ -440,103 +440,149 @@ export function CitySpotlightWidget() {
   )
 }
 
-export function PitchWidget() {
-  return (
-    <div className="relative overflow-hidden rounded-md bg-foreground p-5 text-background">
-      <span className="pointer-events-none absolute -right-4 -top-4 select-none font-serif text-[100px] font-black leading-none opacity-10">
-        IBD
-      </span>
-      <div className="mb-2 font-mono text-[10px] tracking-[0.22em] opacity-70">
-        SPONSORED · 我が社
-      </div>
-      <h3 className="font-serif text-lg font-bold leading-tight">
-        進出 0→1 を、
-        <br />
-        編集部の知見で。
-      </h3>
-      <p className="mt-3 text-xs leading-relaxed opacity-80">
-        市場調査、現地パートナー紹介、規制適合まで。週次レポート＋専任アナリスト。
-      </p>
-      <div className="relative mt-4 grid aspect-video place-items-center rounded-sm bg-white/10">
-        <span className="grid size-12 place-items-center rounded-full bg-accent">
-          <svg width="18" height="18" viewBox="0 0 24 24" fill="white">
-            <path d="M8 5v14l11-7z" />
-          </svg>
-        </span>
-        <span className="absolute bottom-2 left-2 font-mono text-[9px] opacity-60">
-          PITCH · 1:24
-        </span>
-      </div>
-      <Link
-        href="/contact?leadType=expansion"
-        className="mt-4 inline-flex w-full items-center justify-center rounded-sm bg-accent py-2 text-xs font-bold text-white hover:opacity-90"
-      >
-        無料相談を予約 →
-      </Link>
-    </div>
-  )
+type Sponsor = {
+  name: string
+  label: string
+  href: string
+  logo: {
+    src: string
+    width: number
+    height: number
+  }
+  tagline: string
+  description: string
+  services: string[]
+  cta: string
 }
 
-type SocialPost = {
-  handle: string
-  time: string
-  body: string
-  reposts: number
-  likes: number
-}
-
-const SOCIAL_POSTS: SocialPost[] = [
+const SPONSORS: Sponsor[] = [
   {
-    handle: "@ibd_editor",
-    time: "2時間前",
-    body: "半導体パッケージ支援第2弾、後工程と封止材が焦点。日系の装置・治具メーカーは早期に州別の補助条件比較を。",
-    reposts: 28,
-    likes: 142,
+    name: "キャピタルランチャーズ株式会社",
+    label: "CAPITAL LAUNCHERS",
+    href: "https://capital.launchers-g.com/",
+    logo: {
+      src: "/sponsors/capital-launchers.png",
+      width: 240,
+      height: 60,
+    },
+    tagline: "インド進出の判断と準備を、実行可能な計画へ。",
+    description:
+      "強みの整理、市場適合性の検証、現地連携・人材活用まで、日印ビジネスの立ち上げを支援。",
+    services: ["Go/No-Go 判定", "日印連携", "高度人材"],
+    cta: "サービスを見る",
   },
   {
-    handle: "@logi_chen",
-    time: "6時間前",
-    body: "ナバシェバ港の通関リードタイム、3月比で約20%短縮を確認。在庫水準の見直しタイミング。",
-    reposts: 14,
-    likes: 89,
-  },
-  {
-    handle: "@meti_ind",
-    time: "昨日",
-    body: "日印スタートアップ・ブリッジ第3期、10社採択。クリーンテックとAgriTech中心。詳細は次号で。",
-    reposts: 41,
-    likes: 203,
+    name: "Indobox Inc.",
+    label: "INDOBOX",
+    href: "https://indobox.co.jp/",
+    logo: {
+      src: "/sponsors/indobox.png",
+      width: 379,
+      height: 92,
+    },
+    tagline: "日本とインドの融合により、新たな価値を生みだす。",
+    description:
+      "インド進出支援、現地視察、協業型ビジネス創出、人材育成を通じて日本企業とインドをつなぐ。",
+    services: ["進出支援", "視察ツアー", "人材育成"],
+    cta: "Indoboxを知る",
   },
 ]
 
-export function SocialWidget() {
+function SponsorCard({
+  sponsor,
+  variant = "light",
+}: {
+  sponsor: Sponsor
+  variant?: "dark" | "light"
+}) {
+  const dark = variant === "dark"
+
   return (
-    <div className="rounded-md border border-border bg-card p-5">
-      <RailHead label="編集部ソーシャル" en="X / FEED" icon="𝕏" />
-      <ul className="space-y-4">
-        {SOCIAL_POSTS.map((post) => (
-          <li key={post.handle} className="text-xs">
-            <div className="mb-1 flex items-center justify-between">
-              <span className="font-mono font-semibold text-foreground">
-                {post.handle}
-              </span>
-              <span className="font-mono text-[10px] text-muted-foreground">
-                {post.time}
-              </span>
-            </div>
-            <p className="leading-relaxed text-foreground/85">{post.body}</p>
-            <div className="mt-1.5 flex gap-4 font-mono text-[10px] text-muted-foreground">
-              <span>↻ {post.reposts}</span>
-              <span>♥ {post.likes}</span>
-            </div>
-          </li>
+    <a
+      href={sponsor.href}
+      target="_blank"
+      rel="noreferrer"
+      className={
+        "group block rounded-md p-5 transition-shadow hover:shadow-md " +
+        (dark
+          ? "relative overflow-hidden bg-foreground text-background"
+          : "border border-border bg-card text-foreground")
+      }
+    >
+      {dark && (
+        <span className="pointer-events-none absolute -right-5 -top-4 select-none font-serif text-[88px] font-black leading-none opacity-10">
+          SP
+        </span>
+      )}
+      <div
+        className={
+          "mb-3 font-mono text-[10px] tracking-[0.22em] " +
+          (dark ? "opacity-70" : "text-muted-foreground")
+        }
+      >
+        SPONSORED · {sponsor.label}
+      </div>
+      <div className="relative rounded-sm border border-border/70 bg-white p-4">
+        <Image
+          src={sponsor.logo.src}
+          alt={`${sponsor.name} logo`}
+          width={sponsor.logo.width}
+          height={sponsor.logo.height}
+          className="h-12 w-full object-contain"
+        />
+      </div>
+      <h3 className="mt-4 font-serif text-lg font-bold leading-tight">
+        {sponsor.name}
+      </h3>
+      <p
+        className={
+          "mt-2 text-xs font-semibold leading-relaxed " +
+          (dark ? "opacity-90" : "text-foreground/90")
+        }
+      >
+        {sponsor.tagline}
+      </p>
+      <p
+        className={
+          "mt-2 text-xs leading-relaxed " +
+          (dark ? "opacity-75" : "text-muted-foreground")
+        }
+      >
+        {sponsor.description}
+      </p>
+      <div className="mt-4 flex flex-wrap gap-1.5">
+        {sponsor.services.map((service) => (
+          <span
+            key={service}
+            className={
+              "rounded-sm px-2 py-1 font-mono text-[9px] font-semibold tracking-wider " +
+              (dark ? "bg-white/10" : "bg-muted text-foreground/75")
+            }
+          >
+            {service}
+          </span>
         ))}
-      </ul>
-      <span className="mt-3 block text-center font-mono text-[10px] tracking-wider text-muted-foreground">
-        @ibd_editor をフォロー →
+      </div>
+      <span
+        className={
+          "mt-4 inline-flex w-full items-center justify-center rounded-sm py-2 text-xs font-bold transition-colors " +
+          (dark
+            ? "bg-accent text-white group-hover:bg-accent/90"
+            : "border border-foreground text-foreground group-hover:border-accent group-hover:text-accent")
+        }
+      >
+        {sponsor.cta} →
       </span>
-    </div>
+    </a>
   )
+}
+
+export function PitchWidget() {
+  return <SponsorCard sponsor={SPONSORS[0]} variant="dark" />
+}
+
+export function SocialWidget() {
+  return <SponsorCard sponsor={SPONSORS[1]} variant="dark" />
 }
 
 export function NewsletterCTA() {

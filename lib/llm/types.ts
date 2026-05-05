@@ -22,13 +22,18 @@ export interface JapaneseBusinessRelevance {
   reason: string
 }
 
+export interface ReferenceUrl {
+  title: string
+  url: string
+}
+
 export interface SynthesisOutput {
   title: string
   summary: string
   implications: string[]
   industryTags: string[]
   category: string
-  citedSources: string[]
+  referenceUrls: ReferenceUrl[]
   indiaRelevance: IndiaRelevance
   japaneseBusinessRelevance: JapaneseBusinessRelevance
 }

@@ -39,7 +39,7 @@ export class AnthropicClient implements LLMClient {
         throw new LLMError("Claude応答にテキストブロックがありません")
       }
 
-      return parseSynthesisOutput(textBlock.text)
+      return parseSynthesisOutput(textBlock.text, input)
     } catch (error) {
       if (error instanceof LLMError) throw error
       throw new LLMError(

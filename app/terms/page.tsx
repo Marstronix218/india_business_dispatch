@@ -203,7 +203,7 @@ export default function TermsPage() {
               <div>
                 <dt className="inline font-semibold text-foreground">運営者名: </dt>
                 <dd className="inline">
-                  Global Launchers / Capital Launchers（正式法人名に応じて修正）
+                  Global Launchers / Capital Launchers / Indobox Inc. / Indobox India Private Limited
                 </dd>
               </div>
               <div>
@@ -297,7 +297,7 @@ export default function TermsPage() {
             <dl className="space-y-2">
               <div>
                 <dt className="inline font-semibold text-foreground">運営者: </dt>
-                <dd className="inline">Global Launchers / Capital Launchers</dd>
+                <dd className="inline">Global Launchers / Capital Launchers / Indobox Inc. / Indobox India Private Limited</dd>
               </div>
               <div>
                 <dt className="inline font-semibold text-foreground">メール: </dt>

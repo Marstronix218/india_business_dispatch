@@ -41,7 +41,7 @@ export class RunwareClient implements ImageClient {
       throw new ImageGenerationError("RUNWARE_API_KEY が設定されていません")
     }
     this.apiKey = apiKey
-    this.model = opts?.model ?? process.env.RUNWARE_MODEL ?? "runware:97@2"
+    this.model = opts?.model ?? process.env.RUNWARE_MODEL ?? "runware:z-image@turbo"
     this.timeoutMs = opts?.timeoutMs ?? Number(process.env.IMAGE_TIMEOUT_MS ?? 60000)
     this.defaultWidth = opts?.width ?? Number(process.env.IMAGE_WIDTH ?? 1280)
     this.defaultHeight = opts?.height ?? Number(process.env.IMAGE_HEIGHT ?? 720)

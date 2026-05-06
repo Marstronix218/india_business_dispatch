@@ -18,7 +18,7 @@ import {
 } from "@/lib/news-data"
 import { formatSummaryParagraphs } from "@/lib/summary-utils"
 import { ensureMinimumSummaryLength } from "@/lib/summary-utils"
-import { resolveArticleImageUrl, resolveImageCredit } from "@/lib/image-utils"
+import { resolveArticleImageUrl } from "@/lib/image-utils"
 
 export function ArticleView({ id }: { id: string }) {
   const articles = usePublicArticles()
@@ -46,11 +46,6 @@ export function ArticleView({ id }: { id: string }) {
   const summaryParagraphs = formatSummaryParagraphs(detailedSummary)
   const imageSrc = resolveArticleImageUrl(article.imageUrl, article.id)
   const allSources = getAllSources(article)
-  const imageCreditUrl = allSources[0]?.originalUrl ?? article.sourceUrl
-  const isImagePlaceholder = !resolveImageCredit(imageSrc)
-  const imageCredit = isImagePlaceholder
-    ? undefined
-    : resolveImageCredit(imageCreditUrl ?? imageSrc)
 
   return (
     <div className="min-h-screen bg-background">
@@ -86,34 +81,16 @@ export function ArticleView({ id }: { id: string }) {
             </div>
 
             {imageSrc && (
-              <figure className="mx-auto w-full max-w-md space-y-2">
-                <div className="relative aspect-[4/3] w-full overflow-hidden rounded-2xl border border-border bg-muted">
-                  <Image
-                    src={imageSrc}
-                    alt={article.title}
-                    fill
-                    priority
-                    className="object-cover"
-                    sizes="(max-width: 768px) 100vw, 448px"
-                  />
-                </div>
-                {imageCredit && (
-                  <figcaption className="text-right font-mono text-[10px] text-muted-foreground">
-                    {imageCreditUrl ? (
-                      <a
-                        href={imageCreditUrl}
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        className="hover:text-foreground hover:underline"
-                      >
-                        画像: {imageCredit}
-                      </a>
-                    ) : (
-                      <>画像: {imageCredit}</>
-                    )}
-                  </figcaption>
-                )}
-              </figure>
+              <div className="relative mx-auto aspect-[4/3] w-full max-w-md overflow-hidden rounded-2xl border border-border bg-muted">
+                <Image
+                  src={imageSrc}
+                  alt={article.title}
+                  fill
+                  priority
+                  className="object-cover"
+                  sizes="(max-width: 768px) 100vw, 448px"
+                />
+              </div>
             )}
 
             {article.marketSnapshot && (

@@ -21,7 +21,6 @@ import {
   getImageClient,
   type ImageClient,
 } from "@/lib/image-gen"
-import { resolveOgImage } from "@/lib/scrapers/og-image"
 import { fetchSimilarArticles } from "@/lib/scrapers/fetch-india-news"
 
 export type ConnectorMode = "rss" | "api"
@@ -44,7 +43,6 @@ export interface RawSourceArticle {
   publishedAt: string
   bodyText: string
   imageUrl?: string
-  imageSourceUrl?: string
   originalTitle?: string
   originalPublishedAt?: string
   canonicalUrl?: string
@@ -291,7 +289,7 @@ function buildSynthesizedDraft(
     provenance: sources[0],
     sources,
     source: cluster.length > 1 ? `${primary.source}、他${cluster.length - 1}件` : primary.source,
-    sourceUrl: primary.imageSourceUrl ?? primary.url,
+    sourceUrl: primary.url,
     publishedAt: primary.publishedAt,
     category,
     industryTags,
@@ -301,30 +299,6 @@ function buildSynthesizedDraft(
     workflowStatus,
     originConnectorIds: cluster.map((item) => item.connectorId),
     isSynthesized: true,
-  }
-}
-
-async function ensureImageUrl(cluster: RawSourceArticle[]): Promise<void> {
-  for (const article of cluster) {
-    if (article.imageUrl && !article.imageSourceUrl && isLikelyArticleUrl(article.url)) {
-      article.imageSourceUrl = article.url
-    }
-  }
-  if (cluster.some((a) => a.imageUrl && a.imageUrl.length > 0)) return
-  for (const article of cluster) {
-    if (!isLikelyArticleUrl(article.url)) continue
-    const image = await resolveOgImage(article.url)
-    if (image) {
-      article.imageUrl = image
-      article.imageSourceUrl = article.url
-      for (const other of cluster) {
-        if (!other.imageUrl) {
-          other.imageUrl = image
-          other.imageSourceUrl = article.url
-        }
-      }
-      return
-    }
   }
 }
 
@@ -384,18 +358,11 @@ async function buildDraft(
       )
     }
 
-    const generatedImageUrl = await tryGenerateImage(
+    primary.imageUrl = await tryGenerateImage(
       imageClient,
       output.imagePrompt,
       primary.title,
-    )
-    if (generatedImageUrl) {
-      primary.imageUrl = generatedImageUrl
-      primary.imageSourceUrl = undefined
-    } else {
-      primary.imageUrl = undefined
-      primary.imageSourceUrl = undefined
-    }
+    ) ?? undefined
 
     return buildSynthesizedDraft(cluster, primary, output)
   } catch (error) {

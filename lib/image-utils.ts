@@ -16,6 +16,7 @@ export function resolveImageCredit(imageUrl: string | undefined): string | undef
     const host = new URL(imageUrl).hostname.replace(/^www\./, "")
     if (!host || PLACEHOLDER_IMAGE_HOSTS.has(host)) return undefined
     if (host === "runware.ai" || host.endsWith(".runware.ai")) return "AI生成"
+    if (host.endsWith(".supabase.co") || host.endsWith(".supabase.in")) return "AI生成"
     return host
   } catch {
     return undefined

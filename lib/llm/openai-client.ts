@@ -16,7 +16,7 @@ export class OpenAIClient implements LLMClient {
     if (!apiKey) {
       throw new LLMError("OPENAI_API_KEY が設定されていません")
     }
-    this.client = new OpenAI({ apiKey })
+    this.client = new OpenAI({ apiKey, maxRetries: 0 })
     this.model = opts?.model ?? process.env.LLM_MODEL_OPENAI ?? "gpt-4o-mini"
     this.maxTokens = opts?.maxTokens ?? Number(process.env.LLM_MAX_TOKENS ?? 2000)
     this.timeoutMs = opts?.timeoutMs ?? Number(process.env.LLM_TIMEOUT_MS ?? 45000)

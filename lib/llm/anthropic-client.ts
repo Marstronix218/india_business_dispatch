@@ -16,7 +16,7 @@ export class AnthropicClient implements LLMClient {
     if (!apiKey) {
       throw new LLMError("ANTHROPIC_API_KEY が設定されていません")
     }
-    this.client = new Anthropic({ apiKey })
+    this.client = new Anthropic({ apiKey, maxRetries: 0 })
     this.model = opts?.model ?? process.env.LLM_MODEL_ANTHROPIC ?? "claude-sonnet-4-6"
     this.maxTokens = opts?.maxTokens ?? Number(process.env.LLM_MAX_TOKENS ?? 2000)
     this.timeoutMs = opts?.timeoutMs ?? Number(process.env.LLM_TIMEOUT_MS ?? 45000)

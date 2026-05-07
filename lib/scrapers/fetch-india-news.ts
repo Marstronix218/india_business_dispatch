@@ -619,7 +619,8 @@ export interface FetchIndiaNewsResult {
 
 /**
  * 単独記事のタイトルから固有名詞らしき語を抽出して検索クエリ化、
- * Google News RSS で類似記事を 3 件まで取得する。
+ * Google News RSS でインド向け + グローバルの両方を検索し、類似記事を取得する。
+ * グローバル検索を併用することで Reuters / AP / BBC / FT 等の国際ソースが混ざりやすくなる。
  */
 export async function fetchSimilarArticles(
   seedTitle: string,
@@ -640,28 +641,47 @@ export async function fetchSimilarArticles(
   if (queryTerms.length === 0) return []
 
   const query = queryTerms.join(" ")
-  const url = `https://news.google.com/rss/search?q=${encodeURIComponent(query)}&hl=en-IN&gl=IN&ceid=IN:en`
+  const queryEncoded = encodeURIComponent(query)
+  const indiaUrl = `https://news.google.com/rss/search?q=${queryEncoded}&hl=en-IN&gl=IN&ceid=IN:en`
+  const globalUrl = `https://news.google.com/rss/search?q=${queryEncoded}&hl=en-US&gl=US&ceid=US:en`
 
-  const fakeConnector: Connector = {
-    connectorId: "augmentation-search",
-    source: "Google News (関連記事自動検索)",
-    url,
+  const indiaConnector: Connector = {
+    connectorId: "augmentation-search-india",
+    source: "Google News (関連記事自動検索・India)",
+    url: indiaUrl,
     alreadyIndiaFocused: true,
   }
-
-  try {
-    const xml = await fetchText(url, 15_000)
-    const items = await parseRss(xml, fakeConnector, maxResults * 2)
-    const filtered = items
-      .filter((it) => {
-        const key = (it.canonicalUrl ?? it.url).split("?")[0].replace(/\/+$/, "").toLowerCase()
-        return !excludeUrls.has(key)
-      })
-      .slice(0, maxResults)
-    return filtered
-  } catch {
-    return []
+  const globalConnector: Connector = {
+    connectorId: "augmentation-search-global",
+    source: "Google News (関連記事自動検索・Global)",
+    url: globalUrl,
+    alreadyIndiaFocused: false,
   }
+
+  async function search(url: string, connector: Connector): Promise<RawSourceArticle[]> {
+    try {
+      const xml = await fetchText(url, 15_000)
+      return await parseRss(xml, connector, maxResults * 2)
+    } catch {
+      return []
+    }
+  }
+
+  const [indiaItems, globalItems] = await Promise.all([
+    search(indiaUrl, indiaConnector),
+    search(globalUrl, globalConnector),
+  ])
+
+  const localExclude = new Set(excludeUrls)
+  const merged: RawSourceArticle[] = []
+  for (const it of [...indiaItems, ...globalItems]) {
+    const key = (it.canonicalUrl ?? it.url).split("?")[0].replace(/\/+$/, "").toLowerCase()
+    if (localExclude.has(key)) continue
+    localExclude.add(key)
+    merged.push(it)
+    if (merged.length >= maxResults) break
+  }
+  return merged
 }
 
 export async function fetchIndiaNews(limitPerConnector = 6): Promise<FetchIndiaNewsResult> {

@@ -309,7 +309,7 @@ async function buildDraft(
 ): Promise<PipelineDraft> {
   const primary = pickPrimary(cluster)
 
-  if (cluster.length < 2) {
+  if (process.env.REQUIRE_MULTI_SOURCE === "1" && cluster.length < 2) {
     return buildFailedDraft(cluster, primary, "単独ソースのため著作権配慮で除外")
   }
 
@@ -512,9 +512,20 @@ export async function runAutomationPipeline(
 
   const enableAugment = process.env.AUGMENT_SINGLETONS !== "0"
   const augmentLimit = Number(process.env.AUGMENT_MAX_SEEDS ?? 8)
-  const clusters = enableAugment
+  const augmented = enableAugment
     ? await augmentSingletonClusters(trimmed, deduped, augmentLimit)
     : trimmed
+
+  const maxClusters = Number(process.env.MAX_LLM_CLUSTERS ?? 25)
+  const prioritized = [...augmented].sort((a, b) => {
+    if (a.length !== b.length) return b.length - a.length
+    const aDate = Date.parse(a[0]?.publishedAt ?? "") || 0
+    const bDate = Date.parse(b[0]?.publishedAt ?? "") || 0
+    return bDate - aDate
+  })
+  const clusters = prioritized.slice(0, maxClusters)
+  const droppedClusters = prioritized.slice(maxClusters)
+
   const concurrency = Math.max(1, Number(process.env.PIPELINE_CONCURRENCY ?? 2))
   const budgetMs = Number(process.env.PIPELINE_BUDGET_MS ?? 220_000)
   const start = Date.now()
@@ -537,7 +548,7 @@ export async function runAutomationPipeline(
     return draft
   })
 
-  return drafts.reduce<PipelineResult>(
+  const result = drafts.reduce<PipelineResult>(
     (acc, draft) => {
       if (draft.workflowStatus === "failed") {
         acc.failed.push(draft)
@@ -550,4 +561,13 @@ export async function runAutomationPipeline(
     },
     { published: [], reviewQueue: [], failed: [] },
   )
+
+  for (const cluster of droppedClusters) {
+    const primary = pickPrimary(cluster)
+    result.failed.push(
+      buildFailedDraft(cluster, primary, `クラスタ上限超過 (${maxClusters}件) のため未処理`),
+    )
+  }
+
+  return result
 }

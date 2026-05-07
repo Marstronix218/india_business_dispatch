@@ -511,7 +511,8 @@ export async function runAutomationPipeline(
   const clusters = enableAugment
     ? await augmentSingletonClusters(trimmed, deduped, augmentLimit)
     : trimmed
-  const drafts = await mapWithConcurrency(clusters, 3, (cluster) => buildDraft(cluster, llm, imageClient))
+  const concurrency = Math.max(1, Number(process.env.PIPELINE_CONCURRENCY ?? 2))
+  const drafts = await mapWithConcurrency(clusters, concurrency, (cluster) => buildDraft(cluster, llm, imageClient))
 
   return drafts.reduce<PipelineResult>(
     (acc, draft) => {

@@ -51,6 +51,17 @@ async function handle(request: Request) {
     skipped = result.published.length + result.reviewQueue.length
   }
 
+  const failureReasons = [...result.reviewQueue, ...result.failed]
+    .filter((d) => d.failureReason)
+    .map((d) => ({ title: d.title, status: d.workflowStatus, reason: d.failureReason }))
+
+  if (failureReasons.length > 0) {
+    console.warn(
+      `[cron/scrape] ${failureReasons.length} drafts had failure reasons:`,
+      JSON.stringify(failureReasons, null, 2),
+    )
+  }
+
   return NextResponse.json({
     ok: true,
     fetchErrors: errors,
@@ -63,6 +74,7 @@ async function handle(request: Request) {
       inserted,
       skipped,
     },
+    failureReasons,
     supabaseConfigured: hasSupabaseConfig(),
     debug: debugData,
   })

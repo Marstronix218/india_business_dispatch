@@ -23,7 +23,10 @@ export function SiteFooter() {
             <ul className="space-y-2 text-sm text-primary-foreground/75">
               {CATEGORY_OPTIONS.map((category) => (
                 <li key={category}>
-                  <Link href="/" className="transition-opacity hover:opacity-100">
+                  <Link
+                    href={`/?category=${category}`}
+                    className="transition-opacity hover:opacity-100"
+                  >
                     {CATEGORY_LABELS[category]}
                   </Link>
                 </li>

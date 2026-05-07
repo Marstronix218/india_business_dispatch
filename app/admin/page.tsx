@@ -6,6 +6,7 @@ import { useRouter } from "next/navigation"
 import {
   ArrowLeft,
   Eye,
+  LogOut,
   Pencil,
   Plus,
   RefreshCw,
@@ -114,6 +115,19 @@ export default function AdminPage() {
     }
   }
 
+  async function handleLogout() {
+    try {
+      await fetch("/api/admin/logout", {
+        method: "POST",
+        credentials: "same-origin",
+      })
+    } catch {
+      // ignore — redirect anyway
+    }
+    router.replace("/admin/login")
+    router.refresh()
+  }
+
   async function handleRunScrape() {
     setIsScraping(true)
 
@@ -201,6 +215,10 @@ export default function AdminPage() {
           >
             <RefreshCw className={`size-4 ${isScraping ? "animate-spin" : ""}`} />
             スクレイピング実行
+          </Button>
+          <Button onClick={handleLogout} variant="ghost" size="sm">
+            <LogOut className="size-4" />
+            ログアウト
           </Button>
         </div>
       </header>

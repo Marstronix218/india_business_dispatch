@@ -1,6 +1,7 @@
 import Link from "next/link"
 import { Button } from "@/components/ui/button"
-import { TOPIC_SECTIONS } from "@/lib/news-data"
+import { HeaderAuthControls } from "@/components/header-auth-controls"
+import { CATEGORY_LABELS, CATEGORY_OPTIONS } from "@/lib/news-data"
 
 const WEEKDAYS = ["日", "月", "火", "水", "木", "金", "土"]
 
@@ -44,21 +45,19 @@ export function SiteHeader() {
 
           <div className="flex items-center gap-4">
             <nav className="hidden items-center gap-5 text-sm lg:flex">
-              {TOPIC_SECTIONS.map((section) => (
+              {CATEGORY_OPTIONS.map((category) => (
                 <Link
-                  key={section.key}
-                  href={`/?section=${section.key}`}
+                  key={category}
+                  href={`/?category=${category}`}
                   className="text-muted-foreground transition-colors hover:text-accent"
                 >
-                  {section.label}
+                  {CATEGORY_LABELS[category]}
                 </Link>
               ))}
             </nav>
 
             <div className="flex flex-wrap items-center gap-2">
-              <Button asChild variant="outline" size="sm">
-                <Link href="/pricing">無料会員登録</Link>
-              </Button>
+              <HeaderAuthControls />
               <Button asChild size="sm">
                 <Link href="/contact?leadType=expansion">お問い合わせ</Link>
               </Button>

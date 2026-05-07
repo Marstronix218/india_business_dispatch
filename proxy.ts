@@ -1,19 +1,14 @@
 import { type NextRequest, NextResponse } from "next/server"
+import { ADMIN_SESSION_COOKIE } from "@/lib/admin-auth"
 
 export const config = {
   matcher: ["/admin/:path*"],
 }
 
-/**
- * Constant-time string comparison to prevent timing-based credential enumeration.
- * Uses XOR over UTF-8 encoded bytes so the loop always runs the same number of
- * iterations (equal to the length of the expected value).
- */
 function constantTimeEqual(a: string, b: string): boolean {
   const encoder = new TextEncoder()
   const aBytes = encoder.encode(a)
   const bBytes = encoder.encode(b)
-  // Pad / truncate bBytes to match aBytes length to avoid length leakage.
   let result = aBytes.length === bBytes.length ? 0 : 1
   for (let i = 0; i < aBytes.length; i++) {
     result |= aBytes[i] ^ (bBytes[i] ?? 0)
@@ -22,36 +17,23 @@ function constantTimeEqual(a: string, b: string): boolean {
 }
 
 export function proxy(request: NextRequest) {
-  const apiKey = process.env.ADMIN_API_KEY
+  const { pathname } = request.nextUrl
 
-  // In non-production environments, allow access when no key is configured.
+  if (pathname.startsWith("/admin/login")) return NextResponse.next()
+
+  const apiKey = process.env.ADMIN_API_KEY
   if (!apiKey) {
     if (process.env.NODE_ENV !== "production") return NextResponse.next()
-    // In production without ADMIN_API_KEY set, deny access.
-    return new NextResponse("Access denied", { status: 403 })
+    return new NextResponse("ADMIN_API_KEY is not configured", { status: 500 })
   }
 
-  const auth = request.headers.get("authorization") ?? ""
-  if (auth.startsWith("Basic ")) {
-    try {
-      // atob is used intentionally: Next.js middleware runs on the Edge runtime
-      // where the Node.js Buffer API is unavailable.
-      const credentials = atob(auth.slice(6))
-      // credentials format is "username:password"; only the password part is validated.
-      const colonIndex = credentials.indexOf(":")
-      const password = colonIndex >= 0 ? credentials.slice(colonIndex + 1) : credentials
-      if (constantTimeEqual(password, apiKey)) {
-        return NextResponse.next()
-      }
-    } catch {
-      // invalid base64 — fall through to 401
-    }
+  const cookie = request.cookies.get(ADMIN_SESSION_COOKIE)?.value
+  if (cookie && constantTimeEqual(cookie, apiKey)) {
+    return NextResponse.next()
   }
 
-  return new NextResponse("Unauthorized", {
-    status: 401,
-    headers: {
-      "WWW-Authenticate": 'Basic realm="Admin"',
-    },
-  })
+  const url = request.nextUrl.clone()
+  url.pathname = "/admin/login"
+  url.search = ""
+  return NextResponse.redirect(url)
 }

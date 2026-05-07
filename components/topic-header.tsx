@@ -1,10 +1,10 @@
-import type { TopicSection } from "@/lib/news-data"
+import type { CategorySection } from "@/lib/news-data"
 
 export function TopicHeader({
   section,
   count,
 }: {
-  section: TopicSection
+  section: CategorySection
   count: number
 }) {
   return (

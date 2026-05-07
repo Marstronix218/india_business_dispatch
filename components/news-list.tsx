@@ -6,7 +6,6 @@ import { Search } from "lucide-react"
 import { NewsCardHero, NewsCardMosaic } from "@/components/news-card"
 import { TopicCarousel } from "@/components/topic-carousel"
 import { TopicHeader } from "@/components/topic-header"
-import { JapanIndiaBand } from "@/components/japan-india-band"
 import { MarketTicker } from "@/components/market-ticker"
 import {
   TrendingWidget,
@@ -21,36 +20,28 @@ import { SiteHeader } from "@/components/site-header"
 import { Input } from "@/components/ui/input"
 import { usePublicArticles } from "@/lib/article-store"
 import {
+  CATEGORY_OPTIONS,
+  CATEGORY_SECTIONS,
   INDUSTRY_LABELS,
   INDUSTRY_OPTIONS,
-  TOPIC_SECTIONS,
   computePopularityScore,
-  deriveTopicSection,
+  type Category,
   type IndustryTag,
   type NewsArticle,
-  type TopicSectionKey,
 } from "@/lib/news-data"
-
-const INDUSTRY_VISIBLE_SECTIONS: ReadonlyArray<TopicSectionKey | null> = [
-  null,
-  "industry",
-  "strategy",
-]
 
 export function NewsList() {
   const searchParams = useSearchParams()
-  const [activeSection, setActiveSection] = useState<TopicSectionKey | null>(
-    null,
-  )
+  const [activeCategory, setActiveCategory] = useState<Category | null>(null)
   const [selectedIndustries, setSelectedIndustries] = useState<IndustryTag[]>([])
   const [searchQuery, setSearchQuery] = useState("")
   const deferredSearchQuery = useDeferredValue(searchQuery)
   const publicArticles = usePublicArticles()
 
   useEffect(() => {
-    const sectionParam = searchParams.get("section")
-    const nextSection = TOPIC_SECTIONS.some((s) => s.key === sectionParam)
-      ? (sectionParam as TopicSectionKey)
+    const categoryParam = searchParams.get("category")
+    const nextCategory = CATEGORY_OPTIONS.includes(categoryParam as Category)
+      ? (categoryParam as Category)
       : null
 
     const nextTags = searchParams
@@ -59,15 +50,11 @@ export function NewsList() {
         INDUSTRY_OPTIONS.includes(tag as IndustryTag),
       )
 
-    setActiveSection(nextSection)
-    setSelectedIndustries(
-      nextSection === null || INDUSTRY_VISIBLE_SECTIONS.includes(nextSection)
-        ? nextTags
-        : [],
-    )
+    setActiveCategory(nextCategory)
+    setSelectedIndustries(nextCategory === "economy" ? nextTags : [])
   }, [searchParams])
 
-  const showIndustryFilter = INDUSTRY_VISIBLE_SECTIONS.includes(activeSection)
+  const showIndustryFilter = activeCategory === "economy"
 
   const sortedArticles = useMemo(() => {
     const query = deferredSearchQuery.trim().toLowerCase()
@@ -77,8 +64,8 @@ export function NewsList() {
 
     return [...publicArticles]
       .filter((article) => {
-        const matchesSection =
-          activeSection === null || deriveTopicSection(article) === activeSection
+        const matchesCategory =
+          activeCategory === null || article.category === activeCategory
 
         const matchesIndustry =
           !industryFilterActive ||
@@ -95,7 +82,7 @@ export function NewsList() {
 
         const matchesQuery = !query || haystack.includes(query)
 
-        return matchesSection && matchesIndustry && matchesQuery
+        return matchesCategory && matchesIndustry && matchesQuery
       })
       .sort((left, right) => {
         const diff =
@@ -107,7 +94,7 @@ export function NewsList() {
         )
       })
   }, [
-    activeSection,
+    activeCategory,
     deferredSearchQuery,
     publicArticles,
     selectedIndustries,
@@ -115,33 +102,24 @@ export function NewsList() {
   ])
 
   const [hero, mosaic1, mosaic2, mosaic3, ...rest] = sortedArticles
-  const collabHighlights = sortedArticles
-    .filter((a) => a.japanIndiaCollaboration)
-    .slice(0, 3)
 
   const filterActive =
-    activeSection !== null ||
+    activeCategory !== null ||
     (showIndustryFilter && selectedIndustries.length > 0) ||
     deferredSearchQuery.trim().length > 0
 
-  const sectionsBySection = useMemo(() => {
-    const collabIds = new Set(collabHighlights.map((a) => a.id))
-    const buckets = new Map<TopicSectionKey, NewsArticle[]>()
-    for (const section of TOPIC_SECTIONS) buckets.set(section.key, [])
+  const sectionsByCategory = useMemo(() => {
+    const buckets = new Map<Category, NewsArticle[]>()
+    for (const section of CATEGORY_SECTIONS) buckets.set(section.key, [])
     for (const article of rest) {
-      // skip articles already shown in JapanIndiaBand to avoid duplication
-      if (!filterActive && collabIds.has(article.id)) continue
-      const key = deriveTopicSection(article)
-      buckets.get(key)?.push(article)
+      buckets.get(article.category)?.push(article)
     }
     return buckets
-  }, [rest, collabHighlights, filterActive])
+  }, [rest])
 
-  function selectSection(section: TopicSectionKey | null) {
-    setActiveSection(section)
-    if (!INDUSTRY_VISIBLE_SECTIONS.includes(section)) {
-      setSelectedIndustries([])
-    }
+  function selectCategory(category: Category | null) {
+    setActiveCategory(category)
+    if (category !== "economy") setSelectedIndustries([])
   }
 
   function toggleIndustry(tag: IndustryTag) {
@@ -160,8 +138,8 @@ export function NewsList() {
     <div className="min-h-screen bg-background">
       <SiteHeader />
       <FilterRibbon
-        activeSection={activeSection}
-        onSelectSection={selectSection}
+        activeCategory={activeCategory}
+        onSelectCategory={selectCategory}
         searchQuery={searchQuery}
         onSearchChange={setSearchQuery}
       />
@@ -182,13 +160,13 @@ export function NewsList() {
           </div>
         )}
 
-        {(activeSection || industryFilterApplied || searchQuery) && (
+        {(activeCategory || industryFilterApplied || searchQuery) && (
           <div className="mb-4 flex items-center gap-3 text-sm text-muted-foreground">
             <span>{sortedArticles.length}件を表示中</span>
             <button
               type="button"
               onClick={() => {
-                setActiveSection(null)
+                setActiveCategory(null)
                 setSelectedIndustries([])
                 setSearchQuery("")
               }}
@@ -212,17 +190,13 @@ export function NewsList() {
               </section>
             )}
 
-            {!filterActive && collabHighlights.length > 0 && (
-              <JapanIndiaBand articles={collabHighlights} />
-            )}
-
             <div className="grid min-w-0 gap-10 lg:grid-cols-4">
               <div className="min-w-0 space-y-12 lg:col-span-3">
                 {filterActive ? (
                   <FilteredResults articles={rest} />
                 ) : (
-                  TOPIC_SECTIONS.map((section) => {
-                    const items = sectionsBySection.get(section.key) ?? []
+                  CATEGORY_SECTIONS.map((section) => {
+                    const items = sectionsByCategory.get(section.key) ?? []
                     if (items.length === 0) return null
                     return (
                       <section key={section.key} className="min-w-0">
@@ -311,13 +285,13 @@ function ArchiveBlock() {
 }
 
 function FilterRibbon({
-  activeSection,
-  onSelectSection,
+  activeCategory,
+  onSelectCategory,
   searchQuery,
   onSearchChange,
 }: {
-  activeSection: TopicSectionKey | null
-  onSelectSection: (section: TopicSectionKey | null) => void
+  activeCategory: Category | null
+  onSelectCategory: (category: Category | null) => void
   searchQuery: string
   onSearchChange: (value: string) => void
 }) {
@@ -328,15 +302,15 @@ function FilterRibbon({
           FILTER
         </span>
         <CategoryLink
-          active={activeSection === null}
-          onClick={() => onSelectSection(null)}
+          active={activeCategory === null}
+          onClick={() => onSelectCategory(null)}
           label="すべて"
         />
-        {TOPIC_SECTIONS.map((section) => (
+        {CATEGORY_SECTIONS.map((section) => (
           <CategoryLink
             key={section.key}
-            active={activeSection === section.key}
-            onClick={() => onSelectSection(section.key)}
+            active={activeCategory === section.key}
+            onClick={() => onSelectCategory(section.key)}
             label={section.label}
           />
         ))}

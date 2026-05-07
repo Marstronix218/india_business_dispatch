@@ -92,7 +92,39 @@ export function ArticleFormDialog({
   const router = useRouter()
   const [form, setForm] = useState<ArticleFormState>(EMPTY_FORM)
   const [submitting, setSubmitting] = useState(false)
+  const [uploadingImage, setUploadingImage] = useState(false)
   const isEditing = editingId !== null
+
+  async function handleImageUpload(event: React.ChangeEvent<HTMLInputElement>) {
+    const file = event.target.files?.[0]
+    event.target.value = ""
+    if (!file) return
+    setUploadingImage(true)
+    try {
+      const formData = new FormData()
+      formData.append("image", file)
+      const response = await fetch("/api/admin/upload-image", {
+        method: "POST",
+        credentials: "same-origin",
+        body: formData,
+      })
+      const data = (await response.json()) as {
+        ok?: boolean
+        url?: string
+        error?: string
+      }
+      if (!response.ok || !data.ok || !data.url) {
+        throw new Error(data.error ?? `HTTP ${response.status}`)
+      }
+      setForm((current) => ({ ...current, imageUrl: data.url ?? "" }))
+      toast.success("画像をアップロードしました。")
+    } catch (error) {
+      const message = error instanceof Error ? error.message : "不明なエラー"
+      toast.error(`アップロード失敗: ${message}`)
+    } finally {
+      setUploadingImage(false)
+    }
+  }
 
   useEffect(() => {
     if (!open) return
@@ -405,19 +437,44 @@ export function ArticleFormDialog({
               />
             </div>
             <div className="space-y-2">
-              <Label htmlFor="imageUrl">画像 URL</Label>
-              <Input
-                id="imageUrl"
-                type="url"
-                value={form.imageUrl}
-                onChange={(event) =>
-                  setForm((current) => ({
-                    ...current,
-                    imageUrl: event.target.value,
-                  }))
-                }
-                placeholder="/images/article-1.jpg"
-              />
+              <Label htmlFor="imageUrl">画像</Label>
+              <div className="flex flex-col gap-2">
+                <Input
+                  id="imageUrl"
+                  type="url"
+                  value={form.imageUrl}
+                  onChange={(event) =>
+                    setForm((current) => ({
+                      ...current,
+                      imageUrl: event.target.value,
+                    }))
+                  }
+                  placeholder="https://... または下のボタンからアップロード"
+                />
+                <div className="flex items-center gap-3">
+                  <Input
+                    id="imageFile"
+                    type="file"
+                    accept="image/jpeg,image/png,image/webp"
+                    onChange={handleImageUpload}
+                    disabled={uploadingImage}
+                    className="cursor-pointer text-xs file:mr-3 file:cursor-pointer"
+                  />
+                  {uploadingImage && (
+                    <span className="text-xs text-muted-foreground">
+                      アップロード中…
+                    </span>
+                  )}
+                </div>
+                {form.imageUrl && !uploadingImage && (
+                  // eslint-disable-next-line @next/next/no-img-element
+                  <img
+                    src={form.imageUrl}
+                    alt="プレビュー"
+                    className="mt-1 h-32 w-full rounded-xl object-cover"
+                  />
+                )}
+              </div>
             </div>
           </div>
 

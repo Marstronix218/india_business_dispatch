@@ -94,7 +94,7 @@ export const CATEGORY_LABELS: Record<Category, string> = {
   regulation: "規制",
   social: "社会",
   culture: "文化",
-  market: "為替・市況",
+  market: "市況",
   column: "コラム",
 }
 
@@ -179,95 +179,58 @@ export const TOPIC_OPTIONS: Topic[] = [
   "ma_partnership",
 ]
 
-export type TopicSectionKey =
-  | "strategy"
-  | "policy"
-  | "industry"
-  | "talent"
-  | "market"
-  | "japan_india"
-  | "column"
-
-export interface TopicSection {
-  key: TopicSectionKey
+export interface CategorySection {
+  key: Category
   label: string
   enLabel: string
   kicker: string
   accent: string
 }
 
-export const TOPIC_SECTIONS: TopicSection[] = [
+export const CATEGORY_SECTIONS: CategorySection[] = [
   {
-    key: "strategy",
-    label: "進出戦略",
-    enLabel: "Expansion Strategy",
-    kicker: "市場参入、消費者動向、文化文脈——進出判断に効くマクロ視点。",
-    accent: "oklch(0.55 0.18 30)",
-  },
-  {
-    key: "policy",
-    label: "規制・制度",
-    enLabel: "Policy & Regulation",
-    kicker: "進出・採用・通関に効く制度改定をまとめて把握。",
-    accent: "oklch(0.55 0.12 250)",
-  },
-  {
-    key: "industry",
-    label: "産業動向",
-    enLabel: "Industry Trends",
-    kicker: "製造、半導体、物流、調達の現場で起きている変化。",
+    key: "economy",
+    label: "経済",
+    enLabel: "Economy",
+    kicker: "市場拡大、企業投資、産業トレンドを一覧で把握。",
     accent: "oklch(0.42 0.12 150)",
   },
   {
-    key: "talent",
-    label: "人材・労務",
-    enLabel: "Talent & HR",
-    kicker: "採用、定着、教育、評価——人と組織のリアル。",
+    key: "regulation",
+    label: "規制",
+    enLabel: "Regulation",
+    kicker: "進出・調達・採用に影響する制度変更を整理。",
+    accent: "oklch(0.55 0.12 250)",
+  },
+  {
+    key: "social",
+    label: "社会",
+    enLabel: "Social",
+    kicker: "消費者行動、教育、人材動向など現場の変化を観測。",
+    accent: "oklch(0.55 0.18 30)",
+  },
+  {
+    key: "culture",
+    label: "文化",
+    enLabel: "Culture",
+    kicker: "商習慣やローカル文脈を日本企業の実務に接続。",
     accent: "oklch(0.68 0.21 42)",
   },
   {
     key: "market",
-    label: "市況・指標",
+    label: "市況",
     enLabel: "Market & Indicators",
-    kicker: "為替・株式・金利・原油の4指標と日次の経済データ。",
+    kicker: "為替・株式・金利・原油の4指標を日次で確認。",
     accent: "oklch(0.50 0.11 30)",
   },
   {
-    key: "japan_india",
-    label: "日印連携",
-    enLabel: "Japan-India Bridge",
-    kicker: "日系企業の進出・提携・投資の最前線。",
-    accent: "oklch(0.60 0.20 25)",
-  },
-  {
     key: "column",
-    label: "編集部・コラム",
+    label: "コラム",
     enLabel: "Editorial & Columns",
     kicker: "編集部・寄稿・インタビューによる一次知見。",
     accent: "oklch(0.45 0.10 280)",
   },
 ]
-
-export function deriveTopicSection(article: NewsArticle): TopicSectionKey {
-  if (article.japanIndiaCollaboration) return "japan_india"
-  if (article.category === "column") return "column"
-  if (article.category === "regulation") return "policy"
-  if (article.category === "market") return "market"
-  if (
-    article.industryTags.some((tag) =>
-      (["talent", "education"] as IndustryTag[]).includes(tag),
-    )
-  ) {
-    return "talent"
-  }
-  if (article.category === "social" || article.category === "culture") {
-    return "strategy"
-  }
-  if (article.category === "economy" && article.industryTags.length > 0) {
-    return "industry"
-  }
-  return "strategy"
-}
 
 export type ImagePlaceholderTone = "warm" | "cool" | "green" | "default"
 

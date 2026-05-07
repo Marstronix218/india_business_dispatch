@@ -370,7 +370,7 @@ async function buildDraft(
       ? error.message
       : error instanceof Error ? error.message : String(error)
     console.error(`[automation] LLM合成失敗 (title="${primary.title}"): ${msg}`)
-    return buildFallbackDraft(cluster, primary, `LLM合成失敗: ${msg}`)
+    return buildFailedDraft(cluster, primary, `LLM合成失敗: ${msg}`)
   }
 }
 
@@ -459,7 +459,11 @@ async function mapWithConcurrency<T, R>(
 
 export async function runAutomationPipeline(
   rawArticles: RawSourceArticle[],
-  deps?: { llm?: LLMClient | null; imageClient?: ImageClient | null },
+  deps?: {
+    llm?: LLMClient | null
+    imageClient?: ImageClient | null
+    onDraft?: (draft: PipelineDraft) => Promise<void> | void
+  },
 ): Promise<PipelineResult> {
   let llm: LLMClient | null
   if (deps && "llm" in deps) {
@@ -507,12 +511,31 @@ export async function runAutomationPipeline(
   )
 
   const enableAugment = process.env.AUGMENT_SINGLETONS !== "0"
-  const augmentLimit = Number(process.env.AUGMENT_MAX_SEEDS ?? 5)
+  const augmentLimit = Number(process.env.AUGMENT_MAX_SEEDS ?? 8)
   const clusters = enableAugment
     ? await augmentSingletonClusters(trimmed, deduped, augmentLimit)
     : trimmed
   const concurrency = Math.max(1, Number(process.env.PIPELINE_CONCURRENCY ?? 2))
-  const drafts = await mapWithConcurrency(clusters, concurrency, (cluster) => buildDraft(cluster, llm, imageClient))
+  const budgetMs = Number(process.env.PIPELINE_BUDGET_MS ?? 220_000)
+  const start = Date.now()
+  const onDraft = deps?.onDraft
+  const drafts = await mapWithConcurrency(clusters, concurrency, async (cluster) => {
+    let draft: PipelineDraft
+    if (Date.now() - start > budgetMs) {
+      const primary = pickPrimary(cluster)
+      draft = buildFailedDraft(cluster, primary, `パイプラインのタイムバジェット超過 (${budgetMs}ms)`)
+    } else {
+      draft = await buildDraft(cluster, llm, imageClient)
+    }
+    if (onDraft) {
+      try {
+        await onDraft(draft)
+      } catch (err) {
+        console.error(`[automation] onDraft callback failed: ${err instanceof Error ? err.message : String(err)}`)
+      }
+    }
+    return draft
+  })
 
   return drafts.reduce<PipelineResult>(
     (acc, draft) => {

@@ -1,5 +1,5 @@
 import { NextResponse } from "next/server"
-import { runAutomationPipeline } from "@/lib/automation"
+import { runAutomationPipeline, type PipelineDraft } from "@/lib/automation"
 import { debugClusterDetails, readClusterOptionsFromEnv } from "@/lib/clustering"
 import { fetchIndiaNews } from "@/lib/scrapers/fetch-india-news"
 import { insertPipelineDrafts } from "@/lib/supabase/article-repository"
@@ -38,18 +38,22 @@ async function handle(request: Request) {
   const debug = url.searchParams.get("debug") === "1"
   const debugData = debug ? debugClusterDetails(rawArticles, readClusterOptionsFromEnv()) : null
 
-  const result = await runAutomationPipeline(rawArticles)
-
   let inserted = 0
   let skipped = 0
-  if (hasSupabaseConfig()) {
-    const publishedInsert = await insertPipelineDrafts(result.published)
-    const reviewInsert = await insertPipelineDrafts(result.reviewQueue)
-    inserted = publishedInsert.inserted + reviewInsert.inserted
-    skipped = publishedInsert.skipped + reviewInsert.skipped
-  } else {
-    skipped = result.published.length + result.reviewQueue.length
+  const supabaseEnabled = hasSupabaseConfig()
+
+  const onDraft = async (draft: PipelineDraft) => {
+    if (draft.workflowStatus !== "published" && draft.workflowStatus !== "review") return
+    if (!supabaseEnabled) {
+      skipped += 1
+      return
+    }
+    const r = await insertPipelineDrafts([draft])
+    inserted += r.inserted
+    skipped += r.skipped
   }
+
+  const result = await runAutomationPipeline(rawArticles, { onDraft })
 
   const failureReasons = [...result.reviewQueue, ...result.failed]
     .filter((d) => d.failureReason)

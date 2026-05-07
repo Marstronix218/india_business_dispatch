@@ -47,8 +47,13 @@ export class AnthropicClient implements LLMClient {
         return parseSynthesisOutput(textBlock.text, input)
       } catch (error) {
         lastError = error
-        if (error instanceof LLMError) throw error
-        if (attempt < this.maxRetries && isRetryableLLMError(error)) {
+        const isParseError =
+          error instanceof LLMError &&
+          (error.message.includes("JSONパースに失敗") ||
+            error.message.includes("JSONオブジェクトが見つかりません") ||
+            error.message.includes("必須フィールドが欠落"))
+        const retryable = isParseError || isRetryableLLMError(error)
+        if (attempt < this.maxRetries && retryable) {
           const delayMs = Math.min(1000 * Math.pow(2, attempt), 8000) + Math.floor(Math.random() * 500)
           console.warn(
             `[anthropic] retryable error on attempt ${attempt + 1}/${this.maxRetries + 1}, retrying in ${delayMs}ms: ${error instanceof Error ? error.message : String(error)}`,
@@ -56,6 +61,7 @@ export class AnthropicClient implements LLMClient {
           await sleep(delayMs)
           continue
         }
+        if (error instanceof LLMError) throw error
         throw new LLMError(
           `Claude呼び出しに失敗: ${error instanceof Error ? error.message : String(error)}`,
           error,

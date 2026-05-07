@@ -4,13 +4,17 @@ import { useMemo, useState } from "react"
 import Link from "next/link"
 import { useRouter } from "next/navigation"
 import {
+  AlertTriangle,
   ArrowLeft,
+  ExternalLink,
   Eye,
   LogOut,
   Pencil,
   Plus,
   RefreshCw,
   Search,
+  Send,
+  Sparkles,
   Trash2,
 } from "lucide-react"
 import { toast } from "sonner"
@@ -30,61 +34,62 @@ import { useArticles } from "@/lib/article-store"
 import {
   CATEGORY_LABELS,
   CATEGORY_OPTIONS,
-  CONTENT_TYPE_LABELS,
-  CONTENT_TYPE_OPTIONS,
   INDUSTRY_LABELS,
   MARKET_METRIC_ORDER,
-  VISIBILITY_LABELS,
   WORKFLOW_STATUS_LABELS,
-  WORKFLOW_STATUS_OPTIONS,
   type Category,
-  type ContentType,
-  type WorkflowStatus,
+  type NewsArticle,
 } from "@/lib/news-data"
+
+type StatusTab = "all" | "published" | "review"
+
+const STATUS_TAB_LABELS: Record<StatusTab, string> = {
+  all: "すべて",
+  published: "公開中",
+  review: "要確認",
+}
 
 export default function AdminPage() {
   const router = useRouter()
   const articles = useArticles()
   const [search, setSearch] = useState("")
   const [categoryFilter, setCategoryFilter] = useState<Category | "all">("all")
-  const [contentTypeFilter, setContentTypeFilter] = useState<
-    ContentType | "all"
-  >("all")
-  const [statusFilter, setStatusFilter] = useState<WorkflowStatus | "all">("all")
+  const [statusTab, setStatusTab] = useState<StatusTab>("all")
   const [formOpen, setFormOpen] = useState(false)
   const [editingId, setEditingId] = useState<string | null>(null)
   const [isScraping, setIsScraping] = useState(false)
+  const [isPublishing, setIsPublishing] = useState<string | null>(null)
+  const [isCleaningUp, setIsCleaningUp] = useState(false)
+
+  const counts = useMemo(() => {
+    const published = articles.filter((a) => a.workflowStatus === "published").length
+    const review = articles.filter((a) => a.workflowStatus === "review").length
+    const unsynthesized = articles.filter((a) => a.isSynthesized === false).length
+    return { all: articles.length, published, review, unsynthesized }
+  }, [articles])
 
   const filteredArticles = useMemo(() => {
     const query = search.trim().toLowerCase()
 
     return [...articles]
       .filter((article) => {
-        const haystack = [
-          article.title,
-          article.summary,
-          ...article.implications,
-        ]
+        const haystack = [article.title, article.summary, ...article.implications]
           .join(" ")
           .toLowerCase()
 
         const matchesQuery = !query || haystack.includes(query)
         const matchesCategory =
           categoryFilter === "all" || article.category === categoryFilter
-        const matchesContentType =
-          contentTypeFilter === "all" || article.contentType === contentTypeFilter
         const matchesStatus =
-          statusFilter === "all" || article.workflowStatus === statusFilter
+          statusTab === "all" || article.workflowStatus === statusTab
 
-        return matchesQuery && matchesCategory && matchesContentType && matchesStatus
+        return matchesQuery && matchesCategory && matchesStatus
       })
-      .sort((left, right) => {
-        return (
-          new Date(right.publishedAt).getTime() -
-          new Date(left.publishedAt).getTime()
-        )
-      })
-  }, [articles, categoryFilter, contentTypeFilter, search, statusFilter])
+      .sort(
+        (a, b) =>
+          new Date(b.publishedAt).getTime() - new Date(a.publishedAt).getTime(),
+      )
+  }, [articles, categoryFilter, search, statusTab])
 
   function openCreateDialog() {
     setEditingId(null)
@@ -115,6 +120,65 @@ export default function AdminPage() {
     }
   }
 
+  async function handlePublish(article: NewsArticle) {
+    setIsPublishing(article.id)
+    try {
+      const response = await fetch(`/api/admin/articles/${article.id}`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        credentials: "same-origin",
+        body: JSON.stringify({
+          workflowStatus: "published",
+          visibility: "public",
+        }),
+      })
+      const data = (await response.json()) as { ok?: boolean; error?: string }
+      if (!response.ok || !data.ok) {
+        throw new Error(data.error ?? `HTTP ${response.status}`)
+      }
+      toast.success("公開しました。")
+      router.refresh()
+    } catch (error) {
+      const message = error instanceof Error ? error.message : "不明なエラー"
+      toast.error(`公開失敗: ${message}`)
+    } finally {
+      setIsPublishing(null)
+    }
+  }
+
+  async function handleCleanupUnsynthesized() {
+    if (counts.unsynthesized === 0) return
+    if (
+      !window.confirm(
+        `未合成の下書き ${counts.unsynthesized} 件をすべて削除します。よろしいですか？`,
+      )
+    )
+      return
+    setIsCleaningUp(true)
+    const targets = articles.filter((a) => a.isSynthesized === false)
+    let deleted = 0
+    let failed = 0
+    for (const article of targets) {
+      try {
+        const response = await fetch(`/api/admin/articles/${article.id}`, {
+          method: "DELETE",
+          credentials: "same-origin",
+        })
+        if (response.ok) deleted += 1
+        else failed += 1
+      } catch {
+        failed += 1
+      }
+    }
+    setIsCleaningUp(false)
+    if (failed === 0) {
+      toast.success(`未合成の下書き ${deleted} 件を削除しました。`)
+    } else {
+      toast.warning(`削除 ${deleted} 件 / 失敗 ${failed} 件`)
+    }
+    router.refresh()
+  }
+
   async function handleLogout() {
     try {
       await fetch("/api/admin/logout", {
@@ -122,7 +186,7 @@ export default function AdminPage() {
         credentials: "same-origin",
       })
     } catch {
-      // ignore — redirect anyway
+      // ignore
     }
     router.replace("/admin/login")
     router.refresh()
@@ -130,16 +194,11 @@ export default function AdminPage() {
 
   async function handleRunScrape() {
     setIsScraping(true)
-
     try {
-      const response = await fetch("/api/scrape/python", {
-        method: "POST",
-      })
-
+      const response = await fetch("/api/scrape/python", { method: "POST" })
       const data = (await response.json()) as {
         ok?: boolean
         error?: string
-        warning?: string
         fetchErrors?: Array<{ connectorId?: string; error?: string }>
         summary?: {
           fetched?: number
@@ -147,31 +206,18 @@ export default function AdminPage() {
           reviewQueue?: number
           failed?: number
         }
-        result?: {
-          published?: Array<Record<string, unknown>>
-        }
       }
 
-      if (!response.ok) {
-        const serverMessage = data?.error ?? `HTTP ${response.status}`
-        throw new Error(serverMessage)
-      }
-
-      if (!data.ok) {
-        throw new Error(data.error ?? "スクレイピング実行に失敗しました")
-      }
+      if (!response.ok) throw new Error(data?.error ?? `HTTP ${response.status}`)
+      if (!data.ok) throw new Error(data.error ?? "スクレイピング実行に失敗しました")
 
       const errorCount = Array.isArray(data.fetchErrors) ? data.fetchErrors.length : 0
-
       if ((data.summary?.fetched ?? 0) === 0) {
-        toast.warning(
-          `スクレイピング完了（取得0件）: フィード接続やURL品質判定で除外された可能性があります。取得失敗 ${errorCount}件`,
-        )
+        toast.warning(`取得 0件。フィードエラー ${errorCount} 件`)
         return
       }
-
       toast.success(
-        `スクレイピング実行完了: 取得 ${data.summary?.fetched ?? 0}件 / 公開 ${data.summary?.published ?? 0}件 / 取得失敗 ${errorCount}件`,
+        `取得 ${data.summary?.fetched ?? 0} / 公開 ${data.summary?.published ?? 0} / 要確認 ${data.summary?.reviewQueue ?? 0}`,
       )
       router.refresh()
     } catch (error) {
@@ -196,59 +242,85 @@ export default function AdminPage() {
               サイトへ戻る
             </Link>
             <Separator orientation="vertical" className="h-5" />
-            <div>
-              <h1 className="text-lg font-semibold text-foreground">記事管理</h1>
-              <p className="text-xs text-muted-foreground">
-                500字要約と為替・市況4指標を含む新スキーマを管理
-              </p>
-            </div>
+            <h1 className="text-lg font-semibold text-foreground">記事管理</h1>
           </div>
 
-          <Button onClick={openCreateDialog}>
-            <Plus className="size-4" />
-            新規追加
-          </Button>
-          <Button
-            onClick={handleRunScrape}
-            variant="outline"
-            disabled={isScraping}
-          >
-            <RefreshCw className={`size-4 ${isScraping ? "animate-spin" : ""}`} />
-            スクレイピング実行
-          </Button>
-          <Button onClick={handleLogout} variant="ghost" size="sm">
-            <LogOut className="size-4" />
-            ログアウト
-          </Button>
+          <div className="flex items-center gap-2">
+            <Button onClick={openCreateDialog} size="sm">
+              <Plus className="size-4" />
+              新規追加
+            </Button>
+            <Button
+              onClick={handleRunScrape}
+              variant="outline"
+              size="sm"
+              disabled={isScraping}
+            >
+              <RefreshCw className={`size-4 ${isScraping ? "animate-spin" : ""}`} />
+              スクレイピング
+            </Button>
+            <Button onClick={handleLogout} variant="ghost" size="sm">
+              <LogOut className="size-4" />
+              ログアウト
+            </Button>
+          </div>
         </div>
       </header>
 
       <main className="mx-auto max-w-7xl space-y-6 px-4 py-6 sm:px-6 lg:px-8">
-        <div className="grid gap-4 sm:grid-cols-3">
-          <div className="rounded-2xl border border-border bg-card p-5">
-            <p className="text-sm text-muted-foreground">登録記事数</p>
-            <p className="mt-2 text-3xl font-semibold text-foreground">
-              {articles.length}
-            </p>
-          </div>
-          <div className="rounded-2xl border border-border bg-card p-5">
-            <p className="text-sm text-muted-foreground">公開中</p>
-            <p className="mt-2 text-3xl font-semibold text-foreground">
-              {articles.filter((article) => article.workflowStatus === "published").length}
-            </p>
-          </div>
-          <div className="rounded-2xl border border-border bg-card p-5">
-            <p className="text-sm text-muted-foreground">レビュー待ち / 失敗</p>
-            <p className="mt-2 text-3xl font-semibold text-foreground">
-              {
-                articles.filter((article) => article.workflowStatus !== "published")
-                  .length
-              }
-            </p>
-          </div>
+        <div className="flex flex-wrap items-center gap-2 border-b border-border pb-3">
+          {(Object.keys(STATUS_TAB_LABELS) as StatusTab[]).map((tab) => {
+            const count =
+              tab === "all"
+                ? counts.all
+                : tab === "published"
+                  ? counts.published
+                  : counts.review
+            const isActive = statusTab === tab
+            return (
+              <button
+                key={tab}
+                type="button"
+                onClick={() => setStatusTab(tab)}
+                className={`rounded-full px-4 py-1.5 text-sm font-medium transition-colors ${
+                  isActive
+                    ? "bg-foreground text-background"
+                    : "bg-secondary/50 text-muted-foreground hover:bg-secondary"
+                }`}
+              >
+                {STATUS_TAB_LABELS[tab]}
+                <span className="ml-2 text-xs opacity-70">{count}</span>
+              </button>
+            )
+          })}
         </div>
 
-        <div className="grid gap-4 rounded-3xl border border-border bg-card p-5 lg:grid-cols-[1.3fr_0.7fr_0.7fr_0.7fr]">
+        {counts.unsynthesized > 0 && (
+          <div className="flex flex-col gap-3 rounded-2xl border border-amber-500/40 bg-amber-500/10 p-4 sm:flex-row sm:items-center sm:justify-between">
+            <div className="flex items-start gap-3">
+              <AlertTriangle className="size-5 shrink-0 text-amber-600" />
+              <div className="text-sm">
+                <p className="font-medium text-foreground">
+                  未合成の下書きが {counts.unsynthesized} 件あります
+                </p>
+                <p className="text-muted-foreground">
+                  LLMで生成されていない古い下書きで、本文・示唆が定型文です。一括削除を推奨します。
+                </p>
+              </div>
+            </div>
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={handleCleanupUnsynthesized}
+              disabled={isCleaningUp}
+            >
+              <Trash2 className="size-4" />
+              {isCleaningUp ? "削除中…" : `${counts.unsynthesized} 件を一括削除`}
+            </Button>
+          </div>
+        )}
+
+        <div className="grid gap-3 rounded-2xl border border-border bg-card p-4 sm:grid-cols-[1.5fr_0.7fr]">
           <div className="relative">
             <Search className="pointer-events-none absolute left-3 top-1/2 size-4 -translate-y-1/2 text-muted-foreground" />
             <Input
@@ -276,154 +348,174 @@ export default function AdminPage() {
               ))}
             </SelectContent>
           </Select>
-
-          <Select
-            value={contentTypeFilter}
-            onValueChange={(value) =>
-              setContentTypeFilter(value as ContentType | "all")
-            }
-          >
-            <SelectTrigger>
-              <SelectValue placeholder="種別" />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="all">すべての種別</SelectItem>
-              {CONTENT_TYPE_OPTIONS.map((contentType) => (
-                <SelectItem key={contentType} value={contentType}>
-                  {CONTENT_TYPE_LABELS[contentType]}
-                </SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
-
-          <Select
-            value={statusFilter}
-            onValueChange={(value) =>
-              setStatusFilter(value as WorkflowStatus | "all")
-            }
-          >
-            <SelectTrigger>
-              <SelectValue placeholder="公開状態" />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="all">すべての状態</SelectItem>
-              {WORKFLOW_STATUS_OPTIONS.map((status) => (
-                <SelectItem key={status} value={status}>
-                  {WORKFLOW_STATUS_LABELS[status]}
-                </SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
         </div>
 
-        <div className="space-y-4">
-          {filteredArticles.map((article) => (
-            <div
-              key={article.id}
-              className="flex flex-col gap-4 rounded-3xl border border-border bg-card p-5 lg:flex-row lg:items-start lg:justify-between"
-            >
-              <div className="space-y-3">
-                <div className="flex flex-wrap items-center gap-2">
-                  <Badge variant="outline">{CATEGORY_LABELS[article.category]}</Badge>
-                  <Badge variant="outline">
-                    {CONTENT_TYPE_LABELS[article.contentType]}
-                  </Badge>
-                  <Badge variant="outline">
-                    {VISIBILITY_LABELS[article.visibility]}
-                  </Badge>
-                  <Badge variant="outline">
-                    {WORKFLOW_STATUS_LABELS[article.workflowStatus]}
-                  </Badge>
-                  <span className="text-xs text-muted-foreground">
-                    {article.publishedAt}
-                  </span>
-                </div>
+        {filteredArticles.length === 0 ? (
+          <div className="rounded-3xl border border-dashed border-border p-12 text-center text-sm text-muted-foreground">
+            条件に一致する記事はありません。
+          </div>
+        ) : (
+          <div className="space-y-4">
+            {filteredArticles.map((article) => {
+              const isReview = article.workflowStatus === "review"
+              const isUnsynthesized = article.isSynthesized === false
 
-                <div className="space-y-2">
-                  <h2 className="text-lg font-semibold text-foreground">
-                    {article.title}
-                  </h2>
-                  <p className="max-w-3xl line-clamp-4 text-sm leading-7 text-muted-foreground">
-                    {article.summary}
-                  </p>
-                </div>
-
-                {article.marketSnapshot && (
-                  <div className="grid gap-2 sm:grid-cols-2 xl:grid-cols-4">
-                    {MARKET_METRIC_ORDER.map((key) => {
-                      const metric = article.marketSnapshot?.[key]
-                      if (!metric) return null
-
-                      return (
-                        <div
-                          key={key}
-                          className="rounded-xl border border-border bg-secondary/30 px-3 py-2"
-                        >
-                          <p className="text-xs font-medium text-foreground">
-                            {metric.label}
-                          </p>
-                          <p className="text-sm text-muted-foreground">
-                            {metric.value} {metric.unit}
-                          </p>
-                          <p className="text-xs text-foreground">{metric.change}</p>
-                        </div>
-                      )
-                    })}
-                  </div>
-                )}
-
-                {article.industryTags.length > 0 && (
-                  <div className="flex flex-wrap gap-2">
-                    {article.industryTags.map((tag) => (
-                      <Badge key={tag} variant="outline">
-                        {INDUSTRY_LABELS[tag]}
+              return (
+                <div
+                  key={article.id}
+                  className={`flex flex-col gap-4 rounded-3xl border p-5 lg:flex-row lg:items-start lg:justify-between ${
+                    isUnsynthesized
+                      ? "border-amber-500/40 bg-amber-500/5"
+                      : "border-border bg-card"
+                  }`}
+                >
+                  <div className="space-y-3">
+                    <div className="flex flex-wrap items-center gap-2">
+                      <Badge
+                        variant={
+                          article.workflowStatus === "published"
+                            ? "default"
+                            : "outline"
+                        }
+                        className={
+                          article.workflowStatus === "review"
+                            ? "border-amber-500/50 text-amber-700"
+                            : ""
+                        }
+                      >
+                        {WORKFLOW_STATUS_LABELS[article.workflowStatus]}
                       </Badge>
-                    ))}
+                      {article.isSynthesized ? (
+                        <Badge variant="outline" className="border-emerald-500/50 text-emerald-700">
+                          <Sparkles className="size-3" />
+                          AI生成
+                        </Badge>
+                      ) : (
+                        <Badge variant="outline" className="border-amber-500/50 text-amber-700">
+                          <AlertTriangle className="size-3" />
+                          未合成
+                        </Badge>
+                      )}
+                      <Badge variant="outline">
+                        {CATEGORY_LABELS[article.category]}
+                      </Badge>
+                      <span className="text-xs text-muted-foreground">
+                        {article.publishedAt}
+                      </span>
+                      {article.sourceUrl && (
+                        <a
+                          href={article.sourceUrl}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="inline-flex items-center gap-1 text-xs text-muted-foreground underline-offset-2 hover:text-foreground hover:underline"
+                        >
+                          <ExternalLink className="size-3" />
+                          原文
+                        </a>
+                      )}
+                    </div>
+
+                    <div className="space-y-2">
+                      <h2 className="text-lg font-semibold text-foreground">
+                        {article.title}
+                      </h2>
+                      <p className="max-w-3xl line-clamp-3 text-sm leading-7 text-muted-foreground">
+                        {article.summary}
+                      </p>
+                    </div>
+
+                    {article.marketSnapshot && (
+                      <div className="grid gap-2 sm:grid-cols-2 xl:grid-cols-4">
+                        {MARKET_METRIC_ORDER.map((key) => {
+                          const metric = article.marketSnapshot?.[key]
+                          if (!metric) return null
+
+                          return (
+                            <div
+                              key={key}
+                              className="rounded-xl border border-border bg-secondary/30 px-3 py-2"
+                            >
+                              <p className="text-xs font-medium text-foreground">
+                                {metric.label}
+                              </p>
+                              <p className="text-sm text-muted-foreground">
+                                {metric.value} {metric.unit}
+                              </p>
+                              <p className="text-xs text-foreground">
+                                {metric.change}
+                              </p>
+                            </div>
+                          )
+                        })}
+                      </div>
+                    )}
+
+                    {article.industryTags.length > 0 && (
+                      <div className="flex flex-wrap gap-2">
+                        {article.industryTags.map((tag) => (
+                          <Badge key={tag} variant="outline">
+                            {INDUSTRY_LABELS[tag]}
+                          </Badge>
+                        ))}
+                      </div>
+                    )}
+
+                    {article.implications.length > 0 && (
+                      <ul className="space-y-1 text-sm text-muted-foreground">
+                        {article.implications.slice(0, 3).map((implication) => (
+                          <li key={implication}>{implication}</li>
+                        ))}
+                      </ul>
+                    )}
                   </div>
-                )}
 
-                <ul className="space-y-1 text-sm text-muted-foreground">
-                  {article.implications.map((implication) => (
-                    <li key={implication}>{implication}</li>
-                  ))}
-                </ul>
-              </div>
-
-              <div className="flex shrink-0 items-center gap-2">
-                {article.workflowStatus === "published" ? (
-                  <Button asChild variant="ghost" size="sm">
-                    <Link href={`/article/${article.id}`}>
-                      <Eye className="size-4" />
-                      <span className="sr-only">プレビュー</span>
-                    </Link>
-                  </Button>
-                ) : (
-                  <Button variant="ghost" size="sm" disabled>
-                    <Eye className="size-4" />
-                    <span className="sr-only">プレビュー不可</span>
-                  </Button>
-                )}
-                <Button
-                  variant="ghost"
-                  size="sm"
-                  onClick={() => openEditDialog(article.id)}
-                >
-                  <Pencil className="size-4" />
-                  <span className="sr-only">編集</span>
-                </Button>
-                <Button
-                  variant="ghost"
-                  size="sm"
-                  className="text-destructive"
-                  onClick={() => handleDelete(article.id, article.title)}
-                >
-                  <Trash2 className="size-4" />
-                  <span className="sr-only">削除</span>
-                </Button>
-              </div>
-            </div>
-          ))}
-        </div>
+                  <div className="flex shrink-0 flex-wrap items-center gap-2">
+                    {isReview && article.isSynthesized && (
+                      <Button
+                        size="sm"
+                        onClick={() => handlePublish(article)}
+                        disabled={isPublishing === article.id}
+                      >
+                        <Send className="size-4" />
+                        {isPublishing === article.id ? "公開中…" : "公開する"}
+                      </Button>
+                    )}
+                    {article.workflowStatus === "published" ? (
+                      <Button asChild variant="ghost" size="sm">
+                        <Link href={`/article/${article.id}`}>
+                          <Eye className="size-4" />
+                          <span className="sr-only">プレビュー</span>
+                        </Link>
+                      </Button>
+                    ) : (
+                      <Button variant="ghost" size="sm" disabled>
+                        <Eye className="size-4" />
+                        <span className="sr-only">プレビュー不可</span>
+                      </Button>
+                    )}
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      onClick={() => openEditDialog(article.id)}
+                    >
+                      <Pencil className="size-4" />
+                      <span className="sr-only">編集</span>
+                    </Button>
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      className="text-destructive"
+                      onClick={() => handleDelete(article.id, article.title)}
+                    >
+                      <Trash2 className="size-4" />
+                      <span className="sr-only">削除</span>
+                    </Button>
+                  </div>
+                </div>
+              )
+            })}
+          </div>
+        )}
       </main>
 
       <ArticleFormDialog

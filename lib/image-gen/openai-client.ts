@@ -36,7 +36,7 @@ export class OpenAIImageClient implements ImageClient {
     this.client = new OpenAI({ apiKey })
     this.model = opts?.model ?? process.env.OPENAI_IMAGE_MODEL ?? "gpt-image-1-mini"
     this.size = opts?.size ?? (process.env.OPENAI_IMAGE_SIZE as OpenAIImageSize) ?? "1024x1024"
-    this.quality = opts?.quality ?? (process.env.OPENAI_IMAGE_QUALITY as OpenAIImageQuality) ?? "low"
+    this.quality = opts?.quality ?? (process.env.OPENAI_IMAGE_QUALITY as OpenAIImageQuality) ?? "medium"
     this.format = opts?.format ?? (process.env.OPENAI_IMAGE_FORMAT as OpenAIImageFormat) ?? "jpeg"
     const rawCompression = opts?.compression ?? Number(process.env.OPENAI_IMAGE_COMPRESSION ?? 75)
     this.compression = this.format === "png" ? null : Math.max(0, Math.min(100, rawCompression))

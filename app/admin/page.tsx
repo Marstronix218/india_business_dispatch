@@ -195,7 +195,10 @@ export default function AdminPage() {
   async function handleRunScrape() {
     setIsScraping(true)
     try {
-      const response = await fetch("/api/scrape/python", { method: "POST" })
+      const response = await fetch("/api/admin/scrape", {
+        method: "POST",
+        credentials: "same-origin",
+      })
       const data = (await response.json()) as {
         ok?: boolean
         error?: string
@@ -205,19 +208,23 @@ export default function AdminPage() {
           published?: number
           reviewQueue?: number
           failed?: number
+          inserted?: number
+          skipped?: number
         }
       }
 
       if (!response.ok) throw new Error(data?.error ?? `HTTP ${response.status}`)
       if (!data.ok) throw new Error(data.error ?? "スクレイピング実行に失敗しました")
 
-      const errorCount = Array.isArray(data.fetchErrors) ? data.fetchErrors.length : 0
       if ((data.summary?.fetched ?? 0) === 0) {
+        const errorCount = Array.isArray(data.fetchErrors) ? data.fetchErrors.length : 0
         toast.warning(`取得 0件。フィードエラー ${errorCount} 件`)
         return
       }
+      const { fetched = 0, inserted = 0, skipped = 0, published = 0, reviewQueue = 0 } =
+        data.summary ?? {}
       toast.success(
-        `取得 ${data.summary?.fetched ?? 0} / 公開 ${data.summary?.published ?? 0} / 要確認 ${data.summary?.reviewQueue ?? 0}`,
+        `取得 ${fetched} / 合成 ${published + reviewQueue} / 新規保存 ${inserted}${skipped ? ` (重複 ${skipped})` : ""}`,
       )
       router.refresh()
     } catch (error) {

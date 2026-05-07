@@ -46,9 +46,19 @@ function normalize(body: CreateBody): InsertArticleInput | { error: string } {
   if (typeof body.source !== "string" || !body.source.trim()) return { error: "source is required" }
   if (typeof body.publishedAt !== "string" || !body.publishedAt) return { error: "publishedAt is required" }
   if (typeof body.category !== "string") return { error: "category is required" }
-  if (typeof body.contentType !== "string") return { error: "contentType is required" }
-  if (typeof body.visibility !== "string") return { error: "visibility is required" }
-  if (typeof body.workflowStatus !== "string") return { error: "workflowStatus is required" }
+
+  const workflowStatus =
+    typeof body.workflowStatus === "string"
+      ? (body.workflowStatus as WorkflowStatus)
+      : "published"
+  const visibility =
+    typeof body.visibility === "string"
+      ? (body.visibility as Visibility)
+      : workflowStatus === "published"
+        ? "public"
+        : "member"
+  const contentType =
+    typeof body.contentType === "string" ? (body.contentType as ContentType) : "news"
 
   const industryTags = Array.isArray(body.industryTags)
     ? body.industryTags.filter((t): t is string => typeof t === "string")
@@ -66,9 +76,9 @@ function normalize(body: CreateBody): InsertArticleInput | { error: string } {
     category: body.category as Category,
     industryTags: industryTags as IndustryTag[],
     implications,
-    contentType: body.contentType as ContentType,
-    visibility: body.visibility as Visibility,
-    workflowStatus: body.workflowStatus as WorkflowStatus,
+    contentType,
+    visibility,
+    workflowStatus,
     imageUrl: typeof body.imageUrl === "string" && body.imageUrl ? body.imageUrl : undefined,
     featured: body.featured === true,
     isSynthesized: false,

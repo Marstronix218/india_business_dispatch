@@ -25,21 +25,15 @@ import { getArticleById } from "@/lib/article-store"
 import {
   CATEGORY_LABELS,
   CATEGORY_OPTIONS,
-  CONTENT_TYPE_LABELS,
-  CONTENT_TYPE_OPTIONS,
   DEFAULT_MARKET_SNAPSHOT,
   INDUSTRY_LABELS,
   INDUSTRY_OPTIONS,
   MARKET_METRIC_ORDER,
-  VISIBILITY_LABELS,
-  VISIBILITY_OPTIONS,
   WORKFLOW_STATUS_LABELS,
   WORKFLOW_STATUS_OPTIONS,
   type Category,
-  type ContentType,
   type IndustryTag,
   type MarketSnapshot,
-  type Visibility,
   type WorkflowStatus,
 } from "@/lib/news-data"
 import { toast } from "sonner"
@@ -59,8 +53,6 @@ interface ArticleFormState {
   category: Category
   industryTags: IndustryTag[]
   implicationsText: string
-  contentType: ContentType
-  visibility: Visibility
   workflowStatus: WorkflowStatus
   imageUrl: string
   featured: boolean
@@ -76,8 +68,6 @@ const EMPTY_FORM: ArticleFormState = {
   category: "economy",
   industryTags: [],
   implicationsText: "",
-  contentType: "news",
-  visibility: "public",
   workflowStatus: "published",
   imageUrl: "",
   featured: false,
@@ -150,8 +140,6 @@ export function ArticleFormDialog({
       category: article.category,
       industryTags: article.industryTags,
       implicationsText: article.implications.join("\n"),
-      contentType: article.contentType,
-      visibility: article.visibility,
       workflowStatus: article.workflowStatus,
       imageUrl: article.imageUrl ?? "",
       featured: article.featured ?? false,
@@ -194,15 +182,13 @@ export function ArticleFormDialog({
       .map((item) => item.trim())
       .filter(Boolean)
 
-    if (
-      !form.title.trim() ||
-      !form.summary.trim() ||
-      !form.source.trim() ||
-      implications.length === 0
-    ) {
-      toast.error("タイトル、要約、出典、示唆は必須です。")
+    if (!form.title.trim() || !form.summary.trim() || !form.source.trim()) {
+      toast.error("タイトル、要約、出典は必須です。")
       return
     }
+
+    const visibility =
+      form.workflowStatus === "published" ? "public" : "member"
 
     const payload = {
       title: form.title.trim(),
@@ -213,8 +199,8 @@ export function ArticleFormDialog({
       category: form.category,
       industryTags: form.industryTags,
       implications,
-      contentType: form.contentType,
-      visibility: form.visibility,
+      contentType: "news",
+      visibility,
       workflowStatus: form.workflowStatus,
       imageUrl: form.imageUrl.trim() || undefined,
       featured: form.featured,
@@ -251,17 +237,19 @@ export function ArticleFormDialog({
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-h-[90vh] max-w-4xl overflow-y-auto bg-card">
+      <DialogContent className="max-h-[90vh] max-w-3xl overflow-y-auto bg-card">
         <DialogHeader>
           <DialogTitle>{isEditing ? "記事を編集" : "記事を追加"}</DialogTitle>
           <DialogDescription>
-            500字要約と、必要に応じて為替・市況4指標を管理します。
+            必須は タイトル / 要約 / 出典 のみ。他は任意です。
           </DialogDescription>
         </DialogHeader>
 
         <form onSubmit={handleSubmit} className="space-y-5">
           <div className="space-y-2">
-            <Label htmlFor="title">タイトル</Label>
+            <Label htmlFor="title">
+              タイトル <span className="text-destructive">*</span>
+            </Label>
             <Input
               id="title"
               value={form.title}
@@ -276,7 +264,9 @@ export function ArticleFormDialog({
           </div>
 
           <div className="space-y-2">
-            <Label htmlFor="summary">要約</Label>
+            <Label htmlFor="summary">
+              本文・要約 <span className="text-destructive">*</span>
+            </Label>
             <Textarea
               id="summary"
               value={form.summary}
@@ -286,14 +276,16 @@ export function ArticleFormDialog({
                   summary: event.target.value,
                 }))
               }
-              placeholder="約500字の要約を入力"
+              placeholder="記事の本文を入力"
               className="min-h-44"
             />
           </div>
 
           <div className="grid gap-4 md:grid-cols-2">
             <div className="space-y-2">
-              <Label htmlFor="source">出典名</Label>
+              <Label htmlFor="source">
+                出典名 <span className="text-destructive">*</span>
+              </Label>
               <Input
                 id="source"
                 value={form.source}
@@ -303,11 +295,11 @@ export function ArticleFormDialog({
                     source: event.target.value,
                   }))
                 }
-                placeholder="Reuters / 編集部寄稿 など"
+                placeholder="編集部 / Reuters など"
               />
             </div>
             <div className="space-y-2">
-              <Label htmlFor="sourceUrl">出典 URL</Label>
+              <Label htmlFor="sourceUrl">出典 URL（任意）</Label>
               <Input
                 id="sourceUrl"
                 type="url"
@@ -323,7 +315,7 @@ export function ArticleFormDialog({
             </div>
           </div>
 
-          <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
+          <div className="grid gap-4 md:grid-cols-3">
             <div className="space-y-2">
               <Label>カテゴリ</Label>
               <Select
@@ -349,55 +341,7 @@ export function ArticleFormDialog({
             </div>
 
             <div className="space-y-2">
-              <Label>種別</Label>
-              <Select
-                value={form.contentType}
-                onValueChange={(value) =>
-                  setForm((current) => ({
-                    ...current,
-                    contentType: value as ContentType,
-                  }))
-                }
-              >
-                <SelectTrigger>
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
-                  {CONTENT_TYPE_OPTIONS.map((contentType) => (
-                    <SelectItem key={contentType} value={contentType}>
-                      {CONTENT_TYPE_LABELS[contentType]}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </div>
-
-            <div className="space-y-2">
-              <Label>公開範囲</Label>
-              <Select
-                value={form.visibility}
-                onValueChange={(value) =>
-                  setForm((current) => ({
-                    ...current,
-                    visibility: value as Visibility,
-                  }))
-                }
-              >
-                <SelectTrigger>
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
-                  {VISIBILITY_OPTIONS.map((visibility) => (
-                    <SelectItem key={visibility} value={visibility}>
-                      {VISIBILITY_LABELS[visibility]}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </div>
-
-            <div className="space-y-2">
-              <Label>ワークフロー状態</Label>
+              <Label>公開状態</Label>
               <Select
                 value={form.workflowStatus}
                 onValueChange={(value) =>
@@ -419,9 +363,7 @@ export function ArticleFormDialog({
                 </SelectContent>
               </Select>
             </div>
-          </div>
 
-          <div className="grid gap-4 md:grid-cols-2">
             <div className="space-y-2">
               <Label htmlFor="publishedAt">公開日</Label>
               <Input
@@ -436,55 +378,56 @@ export function ArticleFormDialog({
                 }
               />
             </div>
-            <div className="space-y-2">
-              <Label htmlFor="imageUrl">画像</Label>
-              <div className="flex flex-col gap-2">
+          </div>
+
+          <div className="space-y-2">
+            <Label htmlFor="imageUrl">画像（任意）</Label>
+            <div className="flex flex-col gap-2">
+              <Input
+                id="imageUrl"
+                type="url"
+                value={form.imageUrl}
+                onChange={(event) =>
+                  setForm((current) => ({
+                    ...current,
+                    imageUrl: event.target.value,
+                  }))
+                }
+                placeholder="https://... または下のボタンからアップロード"
+              />
+              <div className="flex items-center gap-3">
                 <Input
-                  id="imageUrl"
-                  type="url"
-                  value={form.imageUrl}
-                  onChange={(event) =>
-                    setForm((current) => ({
-                      ...current,
-                      imageUrl: event.target.value,
-                    }))
-                  }
-                  placeholder="https://... または下のボタンからアップロード"
+                  id="imageFile"
+                  type="file"
+                  accept="image/jpeg,image/png,image/webp"
+                  onChange={handleImageUpload}
+                  disabled={uploadingImage}
+                  className="cursor-pointer text-xs file:mr-3 file:cursor-pointer"
                 />
-                <div className="flex items-center gap-3">
-                  <Input
-                    id="imageFile"
-                    type="file"
-                    accept="image/jpeg,image/png,image/webp"
-                    onChange={handleImageUpload}
-                    disabled={uploadingImage}
-                    className="cursor-pointer text-xs file:mr-3 file:cursor-pointer"
-                  />
-                  {uploadingImage && (
-                    <span className="text-xs text-muted-foreground">
-                      アップロード中…
-                    </span>
-                  )}
-                </div>
-                {form.imageUrl && !uploadingImage && (
-                  // eslint-disable-next-line @next/next/no-img-element
-                  <img
-                    src={form.imageUrl}
-                    alt="プレビュー"
-                    className="mt-1 h-32 w-full rounded-xl object-cover"
-                  />
+                {uploadingImage && (
+                  <span className="text-xs text-muted-foreground">
+                    アップロード中…
+                  </span>
                 )}
               </div>
+              {form.imageUrl && !uploadingImage && (
+                // eslint-disable-next-line @next/next/no-img-element
+                <img
+                  src={form.imageUrl}
+                  alt="プレビュー"
+                  className="mt-1 h-32 w-full rounded-xl object-cover"
+                />
+              )}
             </div>
           </div>
 
-          <div className="space-y-3">
-            <Label>業界タグ</Label>
-            <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
+          <div className="space-y-2">
+            <Label>業界タグ（任意）</Label>
+            <div className="grid gap-2 sm:grid-cols-2 lg:grid-cols-3">
               {INDUSTRY_OPTIONS.map((tag) => (
                 <label
                   key={tag}
-                  className="flex items-center gap-3 rounded-2xl border border-border px-3 py-2 text-sm"
+                  className="flex items-center gap-3 rounded-xl border border-border px-3 py-2 text-sm"
                 >
                   <Checkbox
                     checked={form.industryTags.includes(tag)}
@@ -494,15 +437,33 @@ export function ArticleFormDialog({
                 </label>
               ))}
             </div>
+          </div>
+
+          <div className="space-y-2">
+            <Label htmlFor="implicationsText">日本企業への示唆（任意）</Label>
+            <Textarea
+              id="implicationsText"
+              value={form.implicationsText}
+              onChange={(event) =>
+                setForm((current) => ({
+                  ...current,
+                  implicationsText: event.target.value,
+                }))
+              }
+              placeholder={"1行につき1つ。空欄でも保存できます。\n勝機あり: ...\n注意点: ..."}
+              className="min-h-24"
+            />
             <p className="text-xs text-muted-foreground">
-              補助タグとして使います。為替・市況の記事では空でも保存できます。
+              入力した場合のみ記事下部に箇条書きで表示されます。
             </p>
           </div>
 
           {form.category === "market" && (
-            <div className="space-y-4 rounded-3xl border border-border bg-secondary/20 p-4">
+            <div className="space-y-4 rounded-2xl border border-border bg-secondary/20 p-4">
               <div className="space-y-1">
-                <p className="text-sm font-medium text-foreground">為替・市況4指標</p>
+                <p className="text-sm font-medium text-foreground">
+                  為替・市況4指標
+                </p>
                 <p className="text-xs text-muted-foreground">
                   為替・株式・金利・原油の順で表示します。
                 </p>
@@ -562,23 +523,7 @@ export function ArticleFormDialog({
             </div>
           )}
 
-          <div className="space-y-2">
-            <Label htmlFor="implicationsText">日本企業への示唆</Label>
-            <Textarea
-              id="implicationsText"
-              value={form.implicationsText}
-              onChange={(event) =>
-                setForm((current) => ({
-                  ...current,
-                  implicationsText: event.target.value,
-                }))
-              }
-              placeholder={"1行につき1つの示唆を入力\n勝機あり: ...\n注意点: ..."}
-              className="min-h-32"
-            />
-          </div>
-
-          <label className="flex items-center gap-3 rounded-2xl border border-border px-4 py-3 text-sm">
+          <label className="flex items-center gap-3 rounded-xl border border-border px-4 py-3 text-sm">
             <Checkbox
               checked={form.featured}
               onCheckedChange={(checked) =>

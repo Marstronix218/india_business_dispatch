@@ -23,7 +23,7 @@ const jetbrainsMono = JetBrains_Mono({
 })
 
 export const metadata: Metadata = {
-  title: 'India Business Dispatch | インド・ビジネス・ディスパッチ',
+  title: 'IndoBiz Japan | インドビズジャパン',
   description:
     '日本企業向けに、インド市場の短報、業界別ウォッチ、進出・採用の示唆を届ける情報プラットフォーム。',
 }

@@ -18,13 +18,13 @@ export async function generateMetadata({
 }) {
   const { id } = await params
   if (!hasSupabaseConfig()) {
-    return { title: "記事を取得できません | India Business Dispatch" }
+    return { title: "記事を取得できません | IndoBiz Japan" }
   }
   const article = await getArticleById(id)
-  if (!article) return { title: "記事が見つかりません | India Business Dispatch" }
+  if (!article) return { title: "記事が見つかりません | IndoBiz Japan" }
 
   return {
-    title: `${article.title} | India Business Dispatch`,
+    title: `${article.title} | IndoBiz Japan`,
     description: article.summary,
   }
 }

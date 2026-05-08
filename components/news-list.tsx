@@ -207,7 +207,6 @@ export function NewsList() {
                   })
                 )}
 
-                {!filterActive && <ArchiveBlock />}
               </div>
 
               <aside className="space-y-5 self-start lg:col-span-1 lg:sticky lg:top-4">
@@ -255,32 +254,6 @@ function FilteredResults({ articles }: { articles: NewsArticle[] }) {
       </div>
       <TopicCarousel articles={articles} />
     </section>
-  )
-}
-
-function ArchiveBlock() {
-  return (
-    <div className="mt-12 border-t-2 border-foreground pt-6">
-      <div className="flex items-baseline justify-between">
-        <h3 className="font-serif text-2xl font-bold">アーカイブ</h3>
-        <span className="font-mono text-[10px] tracking-[0.2em] text-muted-foreground">
-          // ARCHIVE
-        </span>
-      </div>
-      <p className="mt-1 text-sm text-muted-foreground">
-        過去30日で公開された全記事を時系列で。月別アーカイブ、業界別タグ、原典ソースから絞り込みできます。
-      </p>
-      <div className="mt-4 flex flex-wrap gap-2">
-        {INDUSTRY_OPTIONS.map((tag) => (
-          <span
-            key={tag}
-            className="rounded-full border border-border px-3 py-1 text-xs text-foreground/80 transition-colors hover:border-accent hover:bg-muted"
-          >
-            #{INDUSTRY_LABELS[tag]}
-          </span>
-        ))}
-      </div>
-    </div>
   )
 }
 

@@ -12,7 +12,7 @@ export const runtime = "nodejs"
 
 const LEAD_RECIPIENT = process.env.LEADS_TO_EMAIL || "info@g-launchers.com"
 const LEAD_FROM_EMAIL =
-  process.env.LEADS_FROM_EMAIL || "India Business Dispatch <onboarding@resend.dev>"
+  process.env.LEADS_FROM_EMAIL || "IndoBiz Japan <onboarding@resend.dev>"
 
 type LeadBody = Partial<Record<keyof LeadInquiry, unknown>>
 
@@ -85,7 +85,7 @@ function buildEmail(lead: LeadInquiry) {
     .join("")
 
   return {
-    subject: `【IBD相談フォーム】${LEAD_TYPE_LABELS[lead.leadType]} - ${lead.companyName}`,
+    subject: `【IndoBiz Japan】${LEAD_TYPE_LABELS[lead.leadType]} - ${lead.companyName}`,
     text,
     html: `<table style="border-collapse:collapse;font-family:Arial,sans-serif;font-size:14px;">${htmlRows}</table>`,
   }

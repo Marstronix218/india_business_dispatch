@@ -9,7 +9,7 @@ export function SiteFooter() {
         <div className="grid gap-10 md:grid-cols-3">
           <div className="space-y-3">
             <h4 className="font-serif text-xl font-bold">
-              India Business Dispatch
+              IndoBiz Japan
             </h4>
             <p className="max-w-sm text-sm leading-7 text-primary-foreground/75">
               日本企業向けに、インド市場の短報、業界別ウォッチ、進出・採用の示唆を届ける v1 プロダクトです。
@@ -66,7 +66,7 @@ export function SiteFooter() {
         <Separator className="my-8 bg-primary-foreground/15" />
 
         <p className="text-center font-mono text-[11px] text-primary-foreground/60">
-          &copy; {new Date().getFullYear()} India Business Dispatch. All rights reserved.
+          &copy; {new Date().getFullYear()} IndoBiz Japan. All rights reserved.
         </p>
       </div>
     </footer>

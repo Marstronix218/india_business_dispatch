@@ -52,6 +52,9 @@ export function HeaderAuthControls() {
         >
           {email}
         </span>
+        <Button asChild variant="ghost" size="sm">
+          <Link href="/profile">マイページ</Link>
+        </Button>
         <Button variant="ghost" size="sm" onClick={handleLogout}>
           ログアウト
         </Button>

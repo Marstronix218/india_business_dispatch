@@ -4,9 +4,9 @@ import { SiteFooter } from "@/components/site-footer"
 import { SiteHeader } from "@/components/site-header"
 
 export const metadata: Metadata = {
-  title: "利用規約 | India Business Dispatch",
+  title: "利用規約 | IndoBiz Japan",
   description:
-    "India Business Dispatch の利用規約およびプライバシーポリシーです。",
+    "IndoBiz Japan の利用規約およびプライバシーポリシーです。",
 }
 
 const prohibitedActions = [
@@ -99,7 +99,7 @@ export default function TermsPage() {
             // TERMS & PRIVACY
           </div>
           <h1 className="font-serif text-3xl font-bold tracking-tight text-foreground">
-            India Business Dispatch 利用規約
+            IndoBiz Japan 利用規約
           </h1>
           <p className="text-sm text-muted-foreground">
             最終更新日：2026年5月5日
@@ -109,8 +109,7 @@ export default function TermsPage() {
         <div className="mt-8 space-y-10 rounded-lg border border-border bg-card p-6 shadow-sm md:p-8">
           <div className="space-y-3 text-sm leading-8 text-muted-foreground">
             <p>
-              本利用規約（以下「本規約」といいます。）は、India Business
-              Dispatch（以下「当サイト」といいます。）が提供するウェブサイト、ニュース配信サービス、関連コンテンツおよび付随サービス（以下総称して「本サービス」といいます。）の利用条件を定めるものです。
+              本利用規約（以下「本規約」といいます。）は、IndoBiz Japan（以下「当サイト」といいます。）が提供するウェブサイト、ニュース配信サービス、関連コンテンツおよび付随サービス（以下総称して「本サービス」といいます。）の利用条件を定めるものです。
             </p>
             <p>
               当サイトを利用するすべての利用者（以下「利用者」といいます。）は、本規約に同意した上で本サービスを利用するものとします。
@@ -225,7 +224,7 @@ export default function TermsPage() {
             // PRIVACY POLICY
           </div>
           <h2 className="font-serif text-3xl font-bold tracking-tight text-foreground">
-            India Business Dispatch プライバシーポリシー
+            IndoBiz Japan プライバシーポリシー
           </h2>
           <p className="text-sm text-muted-foreground">
             最終更新日：2026年5月5日

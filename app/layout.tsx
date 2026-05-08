@@ -26,6 +26,11 @@ export const metadata: Metadata = {
   title: 'IndoBiz Japan | インドビズジャパン',
   description:
     '日本企業向けに、インド市場の短報、業界別ウォッチ、進出・採用の示唆を届ける情報プラットフォーム。',
+  icons: {
+    icon: [{ url: '/logo.png', type: 'image/png', sizes: '1254x1254' }],
+    shortcut: '/logo.png',
+    apple: [{ url: '/logo.png', type: 'image/png', sizes: '1254x1254' }],
+  },
 }
 
 export const viewport: Viewport = {

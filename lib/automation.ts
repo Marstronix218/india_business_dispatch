@@ -380,7 +380,7 @@ async function tryGenerateImage(
   fallbackTitle: string,
 ): Promise<string | null> {
   if (!imageClient) return null
-  const positive = (prompt && prompt.trim().length > 0) ? prompt.trim() : fallbackTitle
+  const positive = buildSafeImagePrompt(prompt, fallbackTitle)
   if (!positive) return null
   try {
     const result = await imageClient.generate({ prompt: positive })
@@ -392,6 +392,17 @@ async function tryGenerateImage(
     console.error(`[automation] 画像生成失敗 (prompt="${positive.slice(0, 80)}"): ${msg}`)
     return null
   }
+}
+
+function buildSafeImagePrompt(prompt: string, fallbackTitle: string): string {
+  const base = (prompt && prompt.trim().length > 0) ? prompt.trim() : fallbackTitle.trim()
+  if (!base) return ""
+
+  return [
+    base,
+    "Use only generic, anonymous editorial imagery.",
+    "No company logos, brand names, trademarks, product branding, readable signage, identifiable buildings, named public figures, executives, politicians, celebrities, or recognizable real people.",
+  ].join(" ")
 }
 
 function urlKey(a: RawSourceArticle): string {

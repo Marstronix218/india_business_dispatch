@@ -8,7 +8,7 @@ import {
 const RUNWARE_ENDPOINT = "https://api.runware.ai/v1"
 
 const DEFAULT_NEGATIVE_PROMPT =
-  "text, watermark, logo, signature, blurry, low quality, deformed, recognizable real person face"
+  "text, watermark, logo, brand name, trademark, company signage, product branding, readable signage, identifiable company, identifiable building, public figure, politician, celebrity, executive, signature, blurry, low quality, deformed, recognizable real person face"
 
 interface RunwareImageResult {
   taskUUID?: string

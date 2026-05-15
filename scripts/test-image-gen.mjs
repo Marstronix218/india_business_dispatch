@@ -46,7 +46,7 @@ const bucket = process.env.SUPABASE_IMAGE_BUCKET ?? "article-images"
 console.log(`[test] model=${model} size=${size} quality=${quality} format=${format} bucket=${bucket}`)
 
 const prompt =
-  "A wide editorial photograph of an Indian semiconductor fabrication facility at dawn, photojournalism style, soft natural lighting, no text, no people"
+  "A wide editorial photograph of an anonymous Indian semiconductor fabrication facility at dawn, photojournalism style, soft natural lighting, no text, no logos, no brand names, no company signage, no identifiable companies, no recognizable real persons"
 
 console.log(`[test] step 1/2 — calling OpenAI images.generate ...`)
 const body = {

@@ -350,3 +350,64 @@ export async function deleteArticle(id: string): Promise<boolean> {
   }
   return true
 }
+
+export interface DailyGenerationStat {
+  /** Calendar date in JST, `YYYY-MM-DD`. */
+  date: string
+  /** Articles created (DB rows) on that day. */
+  articles: number
+  /** Articles created with a generated image (`image_url` set) on that day. */
+  images: number
+}
+
+const DAY_MS = 24 * 60 * 60 * 1000
+const JST_OFFSET_MS = 9 * 60 * 60 * 1000
+
+/** Calendar date (`YYYY-MM-DD`) of an ISO timestamp in JST (UTC+9, no DST). */
+function jstDate(iso: string): string {
+  return new Date(new Date(iso).getTime() + JST_OFFSET_MS)
+    .toISOString()
+    .slice(0, 10)
+}
+
+/**
+ * Counts articles and image-bearing articles created per day over the last
+ * `days` days, bucketed by JST calendar date and zero-filled so the series has
+ * no gaps. Used by the admin dashboard generation graph.
+ */
+export async function getDailyGenerationStats(
+  days = 30,
+): Promise<DailyGenerationStat[]> {
+  if (!hasSupabaseConfig()) return []
+
+  const sinceIso = new Date(Date.now() - days * DAY_MS).toISOString()
+  const { data, error } = await getServiceClient()
+    .from("articles")
+    .select("created_at, image_url")
+    .gte("created_at", sinceIso)
+    .order("created_at", { ascending: true })
+
+  if (error) {
+    console.error("[supabase] getDailyGenerationStats failed:", error.message)
+    return []
+  }
+
+  // Pre-seed every day in the window (oldest → newest) so the chart is continuous.
+  const buckets = new Map<string, DailyGenerationStat>()
+  for (let i = days - 1; i >= 0; i--) {
+    const date = jstDate(new Date(Date.now() - i * DAY_MS).toISOString())
+    buckets.set(date, { date, articles: 0, images: 0 })
+  }
+
+  for (const row of (data ?? []) as {
+    created_at: string
+    image_url: string | null
+  }[]) {
+    const bucket = buckets.get(jstDate(row.created_at))
+    if (!bucket) continue // row landed just outside the JST window — skip
+    bucket.articles += 1
+    if (row.image_url) bucket.images += 1
+  }
+
+  return [...buckets.values()]
+}

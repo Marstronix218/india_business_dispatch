@@ -19,6 +19,7 @@ import {
 } from "lucide-react"
 import { toast } from "sonner"
 import { ArticleFormDialog } from "@/components/admin/article-form-dialog"
+import { GenerationStats } from "@/components/admin/generation-stats"
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
@@ -326,6 +327,8 @@ export default function AdminPage() {
             </Button>
           </div>
         )}
+
+        <GenerationStats />
 
         <div className="grid gap-3 rounded-2xl border border-border bg-card p-4 sm:grid-cols-[1.5fr_0.7fr]">
           <div className="relative">

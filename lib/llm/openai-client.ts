@@ -38,6 +38,9 @@ export class OpenAIClient implements LLMClient {
               { role: "system", content: system },
               { role: "user", content: user },
             ],
+            ...(this.model.startsWith("gpt-5") || this.model.startsWith("o1") || this.model.startsWith("o3")
+              ? { reasoning_effort: "low" as const }
+              : {}),
           },
           { timeout: this.timeoutMs },
         )

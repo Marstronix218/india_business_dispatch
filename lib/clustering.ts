@@ -35,6 +35,9 @@ const STOPWORDS = new Set<string>([
 
 const MIN_TOKEN_LENGTH = 3
 
+const CJK_RUN_REGEX = /[぀-ゟ゠-ヿ一-鿿㐀-䶿]+/gu
+const CJK_CHAR_REGEX = /[぀-ゟ゠-ヿ一-鿿㐀-䶿]/
+
 export function extractKeywords(title: string, body: string, n: number): string[] {
   const weightedText = `${title} ${title} ${title} ${body ?? ""}`
 
@@ -46,6 +49,17 @@ export function extractKeywords(title: string, body: string, n: number): string[
   const scores = new Map<string, number>()
 
   for (const raw of rawTokens) {
+    if (CJK_CHAR_REGEX.test(raw)) {
+      for (const latinRun of raw.match(/[A-Za-z0-9]+/g) ?? []) {
+        if (latinRun.length < MIN_TOKEN_LENGTH) continue
+        const lower = latinRun.toLowerCase()
+        if (STOPWORDS.has(lower)) continue
+        const isProperNoun = /^[A-Z]/.test(latinRun)
+        const boost = isProperNoun ? 2 : 0
+        scores.set(lower, (scores.get(lower) ?? 0) + 1 + boost)
+      }
+      continue
+    }
     if (raw.length < MIN_TOKEN_LENGTH) continue
     const lower = raw.toLowerCase()
     if (STOPWORDS.has(lower)) continue
@@ -53,6 +67,15 @@ export function extractKeywords(title: string, body: string, n: number): string[
     const isProperNoun = /^[A-Z]/.test(raw)
     const boost = isProperNoun ? 2 : 0
     scores.set(lower, (scores.get(lower) ?? 0) + 1 + boost)
+  }
+
+  for (const run of weightedText.match(CJK_RUN_REGEX) ?? []) {
+    if (run.length < 2) continue
+    for (let i = 0; i < run.length - 1; i++) {
+      const bigram = run.slice(i, i + 2)
+      if (STOPWORDS.has(bigram)) continue
+      scores.set(bigram, (scores.get(bigram) ?? 0) + 1)
+    }
   }
 
   return [...scores.entries()]

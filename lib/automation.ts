@@ -100,6 +100,8 @@ const KNOWN_INDUSTRY_TAGS: IndustryTag[] = [
 ]
 const KNOWN_TAG_SET = new Set<string>(KNOWN_INDUSTRY_TAGS)
 
+const CJK_TITLE_REGEX = /[぀-ゟ゠-ヿ一-鿿㐀-䶿]/
+
 export function buildDedupeKey(title: string) {
   return cleanText(title)
     .toLowerCase()
@@ -528,8 +530,15 @@ export async function runAutomationPipeline(
     : trimmed
 
   const maxClusters = Number(process.env.MAX_LLM_CLUSTERS ?? 25)
+  const jpBoost = Number(process.env.JP_CLUSTER_BOOST ?? 1)
+  const priorityWeight = (cluster: RawSourceArticle[]): number => {
+    const hasJapanese = cluster.some((a) => CJK_TITLE_REGEX.test(a.title ?? ""))
+    return cluster.length + (hasJapanese ? jpBoost : 0)
+  }
   const prioritized = [...augmented].sort((a, b) => {
-    if (a.length !== b.length) return b.length - a.length
+    const aw = priorityWeight(a)
+    const bw = priorityWeight(b)
+    if (aw !== bw) return bw - aw
     const aDate = Date.parse(a[0]?.publishedAt ?? "") || 0
     const bDate = Date.parse(b[0]?.publishedAt ?? "") || 0
     return bDate - aDate

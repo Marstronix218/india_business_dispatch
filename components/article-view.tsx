@@ -62,7 +62,7 @@ export function ArticleView({ id }: { id: string }) {
       </div>
 
       <main className="mx-auto max-w-3xl px-4 py-6 sm:px-6 lg:px-8">
-        <article className="space-y-8">
+        <article className="space-y-5">
             <div className="space-y-4">
               <div className="flex flex-wrap items-center gap-2">
                 <Badge className={`${CATEGORY_COLORS[article.category]} border-none`}>
@@ -94,7 +94,7 @@ export function ArticleView({ id }: { id: string }) {
             )}
 
             {article.marketSnapshot && (
-              <section className="rounded-3xl border border-border bg-card p-6">
+              <section className="rounded-3xl border border-border bg-card p-5 sm:p-6">
                 <p className="font-mono text-[11px] font-semibold uppercase tracking-[0.22em] text-accent">
                   為替・市況
                 </p>
@@ -134,7 +134,7 @@ export function ArticleView({ id }: { id: string }) {
               </section>
             )}
 
-            <section className="space-y-4 rounded-3xl border border-border bg-card p-6">
+            <section className="space-y-4 rounded-3xl border border-border bg-card p-5 sm:p-6">
               {summaryParagraphs.map((paragraph, idx) => (
                 <p
                   key={idx}
@@ -145,11 +145,11 @@ export function ArticleView({ id }: { id: string }) {
               ))}
             </section>
 
-            <section className="rounded-3xl border border-border bg-card p-6">
+            <section className="rounded-3xl border border-border bg-card p-5 sm:p-6">
               <p className="font-mono text-[11px] font-semibold uppercase tracking-[0.22em] text-accent">
                 日本企業への示唆
               </p>
-              <ul className="mt-4 space-y-3">
+              <ul className="mt-3 space-y-2">
                 {article.implications.map((implication) => (
                   <li
                     key={implication}
@@ -162,11 +162,11 @@ export function ArticleView({ id }: { id: string }) {
             </section>
 
             {allSources.length > 0 && (
-              <section className="rounded-3xl border border-border bg-card p-6">
+              <section className="rounded-3xl border border-border bg-card p-5 sm:p-6">
                 <p className="font-mono text-[11px] font-semibold uppercase tracking-[0.22em] text-accent">
                   参考記事
                 </p>
-                <ul className="mt-4 space-y-2">
+                <ul className="mt-3 space-y-2">
                   {allSources.map((src, idx) => (
                     <li
                       key={`${idx}-${src.originalUrl}`}
@@ -192,11 +192,11 @@ export function ArticleView({ id }: { id: string }) {
             )}
 
             {article.industryTags.length > 0 && (
-              <section className="rounded-3xl border border-border bg-card p-6">
+              <section className="rounded-3xl border border-border bg-card p-5 sm:p-6">
                 <p className="font-mono text-[11px] font-semibold uppercase tracking-[0.22em] text-accent">
                   業界タグ
                 </p>
-                <div className="mt-4 flex flex-wrap gap-2">
+                <div className="mt-3 flex flex-wrap gap-2">
                   {article.industryTags.map((tag) => (
                     <Badge
                       key={tag}

@@ -36,7 +36,7 @@ export function ArticleTeaser({ article }: { article: NewsArticle }) {
       </div>
 
       <main className="mx-auto max-w-3xl px-4 py-6 sm:px-6 lg:px-8">
-        <article className="space-y-6">
+        <article className="space-y-5">
           <div className="space-y-4">
             <div className="flex flex-wrap items-center gap-2">
               <Badge className={`${CATEGORY_COLORS[article.category]} border-none`}>
@@ -65,14 +65,14 @@ export function ArticleTeaser({ article }: { article: NewsArticle }) {
             </div>
           )}
 
-          <section className="space-y-4 rounded-3xl border border-border bg-card p-6">
+          <section className="space-y-4 rounded-3xl border border-border bg-card p-5 sm:p-6">
             <p className="text-base leading-8 text-foreground">
               {teaser}
               {truncated ? "…" : ""}
             </p>
           </section>
 
-          <section className="rounded-3xl border-2 border-accent/40 bg-card p-8 text-center">
+          <section className="rounded-3xl border-2 border-accent/40 bg-card p-6 text-center sm:p-8">
             <Lock className="mx-auto size-6 text-accent" />
             <h2 className="mt-3 font-serif text-xl font-bold text-foreground">
               続きを読むには登録が必要です

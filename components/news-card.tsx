@@ -10,6 +10,7 @@ import {
   type NewsArticle,
 } from "@/lib/news-data"
 import { resolveArticleImageUrl } from "@/lib/image-utils"
+import { cn } from "@/lib/utils"
 
 const TONE_TO_STRIPE: Record<ImagePlaceholderTone, string> = {
   warm: "ph-stripe-warm",
@@ -59,14 +60,23 @@ function CardBadges({
   )
 }
 
-export function NewsCardHero({ article }: { article: NewsArticle }) {
+export function NewsCardHero({
+  article,
+  className,
+}: {
+  article: NewsArticle
+  className?: string
+}) {
   const imageSrc = resolveArticleImageUrl(article.imageUrl, article.id)
   const tone = deriveImageTone(article)
 
   return (
     <Link
       href={`/article/${article.id}`}
-      className="card-hover group relative block aspect-[16/10] overflow-hidden rounded-md bg-muted"
+      className={cn(
+        "card-hover group relative block aspect-[16/10] overflow-hidden rounded-md bg-muted",
+        className,
+      )}
     >
       <CardBadges article={article} />
       {imageSrc ? (
@@ -100,9 +110,11 @@ export function NewsCardHero({ article }: { article: NewsArticle }) {
 
 export function NewsCardMosaic({
   article,
+  className,
   priority = false,
 }: {
   article: NewsArticle
+  className?: string
   stacked?: boolean
   priority?: boolean
 }) {
@@ -112,7 +124,10 @@ export function NewsCardMosaic({
   return (
     <Link
       href={`/article/${article.id}`}
-      className="card-hover group relative block h-full min-h-[8rem] overflow-hidden rounded-md bg-muted"
+      className={cn(
+        "card-hover group relative block h-full min-h-[8rem] overflow-hidden rounded-md bg-muted",
+        className,
+      )}
     >
       <CardBadges article={article} position="top-left-tight" />
       {imageSrc ? (
@@ -132,7 +147,7 @@ export function NewsCardMosaic({
         <p className="font-mono text-[10px] text-white/70">
           {formatArticleShortDate(article.publishedAt)}
         </p>
-        <h3 className="mt-1 line-clamp-3 text-sm font-semibold leading-snug text-white">
+        <h3 className="mt-1 line-clamp-3 text-[15px] font-semibold leading-snug text-white md:text-base">
           {article.title}
         </h3>
       </div>

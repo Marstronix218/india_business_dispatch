@@ -180,13 +180,37 @@ export function NewsList() {
         {hasResults ? (
           <>
             {hero && (
-              <section className="mb-12 grid gap-3 lg:auto-rows-fr lg:grid-cols-3 lg:grid-rows-3">
-                <div className="lg:col-span-2 lg:row-span-3">
-                  <NewsCardHero article={hero} />
+              <section className="mb-12 grid gap-3 lg:grid-cols-2">
+                <div className="lg:min-h-[30rem]">
+                  <NewsCardHero
+                    article={hero}
+                    className="h-full lg:aspect-auto"
+                  />
                 </div>
-                {mosaic1 && <NewsCardMosaic article={mosaic1} priority />}
-                {mosaic2 && <NewsCardMosaic article={mosaic2} priority />}
-                {mosaic3 && <NewsCardMosaic article={mosaic3} />}
+                <div className="grid gap-3 sm:grid-cols-2 lg:min-h-[30rem] lg:grid-rows-2">
+                  {mosaic1 && (
+                    <div className="sm:col-span-2">
+                      <NewsCardMosaic
+                        article={mosaic1}
+                        className="aspect-[16/10] lg:aspect-auto"
+                        priority
+                      />
+                    </div>
+                  )}
+                  {mosaic2 && (
+                    <NewsCardMosaic
+                      article={mosaic2}
+                      className="aspect-[16/10] lg:aspect-auto"
+                      priority
+                    />
+                  )}
+                  {mosaic3 && (
+                    <NewsCardMosaic
+                      article={mosaic3}
+                      className="aspect-[16/10] lg:aspect-auto"
+                    />
+                  )}
+                </div>
               </section>
             )}
 

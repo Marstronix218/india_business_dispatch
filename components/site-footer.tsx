@@ -59,6 +59,11 @@ export function SiteFooter() {
                   利用規約・プライバシーポリシー
                 </Link>
               </li>
+              <li>
+                <Link href="/legal/tokushoho" className="transition-opacity hover:opacity-100">
+                  特定商取引法に基づく表記
+                </Link>
+              </li>
             </ul>
           </div>
         </div>

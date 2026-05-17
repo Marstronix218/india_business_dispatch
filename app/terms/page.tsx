@@ -201,19 +201,27 @@ export default function TermsPage() {
             <dl className="space-y-2">
               <div>
                 <dt className="inline font-semibold text-foreground">運営者名: </dt>
-                <dd className="inline">
-                  Global Launchers / Capital Launchers / Indobox Inc. / Indobox India Private Limited
-                </dd>
+                <dd className="inline">グローバルランチャーズ株式会社</dd>
               </div>
               <div>
                 <dt className="inline font-semibold text-foreground">所在地: </dt>
-                <dd className="inline">愛知県名古屋市（正式住所を記載）</dd>
+                <dd className="inline">〒466-0051 愛知県名古屋市昭和区御器所2丁目4-14-1</dd>
               </div>
               <div>
                 <dt className="inline font-semibold text-foreground">
                   お問い合わせ先:{" "}
                 </dt>
-                <dd className="inline">（問い合わせ用メールアドレス）</dd>
+                <dd className="inline">info@g-launchers.com</dd>
+              </div>
+              <div className="pt-2 text-xs">
+                ※特定商取引法に基づく表記は
+                <a
+                  href="/legal/tokushoho"
+                  className="text-accent underline-offset-2 hover:underline"
+                >
+                  こちら
+                </a>
+                をご覧ください。
               </div>
             </dl>
           </LegalSection>
@@ -296,7 +304,7 @@ export default function TermsPage() {
             <dl className="space-y-2">
               <div>
                 <dt className="inline font-semibold text-foreground">運営者: </dt>
-                <dd className="inline">Global Launchers / Capital Launchers / Indobox Inc. / Indobox India Private Limited</dd>
+                <dd className="inline">グローバルランチャーズ株式会社</dd>
               </div>
               <div>
                 <dt className="inline font-semibold text-foreground">メール: </dt>

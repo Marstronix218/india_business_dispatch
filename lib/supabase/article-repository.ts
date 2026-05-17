@@ -4,6 +4,8 @@ import {
   type ContentType,
   type IndustryTag,
   type NewsArticle,
+  type QualityCheckMeta,
+  type QualityVerdict,
   type SourceProvenance,
   type Visibility,
   type WorkflowStatus,
@@ -28,6 +30,10 @@ interface ArticleRow {
   featured: boolean
   is_synthesized: boolean
   dedupe_key: string | null
+  quality_verdict: string | null
+  quality_notes: string | null
+  revision_count: number | null
+  last_quality_check_at: string | null
   article_sources?: SourceRow[] | null
 }
 
@@ -50,12 +56,27 @@ const ARTICLE_SELECT = `
   industry_tags,
   implications, content_type, visibility, workflow_status,
   image_url, featured, is_synthesized, dedupe_key,
+  quality_verdict, quality_notes, revision_count, last_quality_check_at,
   article_sources (
     article_id, source_name, original_title, original_url, canonical_url,
     original_published_at, fetched_at, extracted_by, source_language,
     evidence_snippets, display_order
   )
 `
+
+function isQualityVerdict(value: string | null): value is QualityVerdict {
+  return value === "PASS" || value === "REVISION" || value === "REJECT"
+}
+
+function rowToQualityCheck(row: ArticleRow): QualityCheckMeta | undefined {
+  if (!isQualityVerdict(row.quality_verdict)) return undefined
+  return {
+    verdict: row.quality_verdict,
+    notes: row.quality_notes ?? undefined,
+    revisionCount: row.revision_count ?? 0,
+    checkedAt: row.last_quality_check_at ?? undefined,
+  }
+}
 
 function rowToProvenance(row: SourceRow): SourceProvenance {
   return {
@@ -95,6 +116,7 @@ function rowToArticle(row: ArticleRow): NewsArticle {
     isSynthesized: row.is_synthesized,
     provenance: sources[0],
     sources: sources.length > 0 ? sources : undefined,
+    qualityCheck: rowToQualityCheck(row),
   }
 }
 
@@ -166,6 +188,7 @@ export interface InsertArticleInput {
   isSynthesized?: boolean
   dedupeKey?: string
   sources?: SourceProvenance[]
+  qualityCheck?: QualityCheckMeta
 }
 
 function toRowInsert(input: InsertArticleInput) {
@@ -185,6 +208,10 @@ function toRowInsert(input: InsertArticleInput) {
     featured: input.featured ?? false,
     is_synthesized: input.isSynthesized ?? false,
     dedupe_key: input.dedupeKey ?? null,
+    quality_verdict: input.qualityCheck?.verdict ?? null,
+    quality_notes: input.qualityCheck?.notes ?? null,
+    revision_count: input.qualityCheck?.revisionCount ?? 0,
+    last_quality_check_at: input.qualityCheck?.checkedAt ?? null,
   }
 }
 
@@ -278,6 +305,7 @@ export async function insertPipelineDrafts(
       isSynthesized: draft.isSynthesized ?? false,
       dedupeKey: draft.dedupeKey,
       sources: draft.sources,
+      qualityCheck: draft.qualityCheck,
     }
 
     const { data, error } = await client
@@ -327,6 +355,12 @@ export async function updateArticle(
   if (input.imageUrl !== undefined) row.image_url = input.imageUrl ?? null
   if (input.featured !== undefined) row.featured = input.featured
   if (input.isSynthesized !== undefined) row.is_synthesized = input.isSynthesized
+  if (input.qualityCheck !== undefined) {
+    row.quality_verdict = input.qualityCheck?.verdict ?? null
+    row.quality_notes = input.qualityCheck?.notes ?? null
+    row.revision_count = input.qualityCheck?.revisionCount ?? 0
+    row.last_quality_check_at = input.qualityCheck?.checkedAt ?? null
+  }
 
   const { error } = await client.from("articles").update(row).eq("id", id)
   if (error) {

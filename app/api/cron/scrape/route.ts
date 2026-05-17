@@ -66,6 +66,33 @@ async function handle(request: Request) {
     )
   }
 
+  const allDrafts = [...result.published, ...result.reviewQueue, ...result.failed]
+  const quality = {
+    pass: allDrafts.filter((d) => d.qualityCheck?.verdict === "PASS").length,
+    revision: allDrafts.filter((d) => d.qualityCheck?.verdict === "REVISION").length,
+    reject: allDrafts.filter((d) => d.qualityCheck?.verdict === "REJECT").length,
+    totalRevisions: allDrafts.reduce(
+      (sum, d) => sum + (d.qualityCheck?.revisionCount ?? 0),
+      0,
+    ),
+  }
+
+  const qualityNotes = allDrafts
+    .filter((d) => d.qualityCheck && d.qualityCheck.verdict !== "PASS")
+    .map((d) => ({
+      title: d.title,
+      verdict: d.qualityCheck?.verdict,
+      revisionCount: d.qualityCheck?.revisionCount ?? 0,
+      notes: d.qualityCheck?.notes,
+    }))
+
+  if (qualityNotes.length > 0) {
+    console.warn(
+      `[cron/scrape] ${qualityNotes.length} drafts flagged by quality check:`,
+      JSON.stringify(qualityNotes, null, 2),
+    )
+  }
+
   return NextResponse.json({
     ok: true,
     fetchErrors: errors,
@@ -77,8 +104,10 @@ async function handle(request: Request) {
       failed: result.failed.length,
       inserted,
       skipped,
+      quality,
     },
     failureReasons,
+    qualityNotes,
     supabaseConfigured: hasSupabaseConfig(),
     debug: debugData,
   })

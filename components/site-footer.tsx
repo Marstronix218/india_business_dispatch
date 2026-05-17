@@ -11,7 +11,7 @@ export function SiteFooter() {
             <h4 className="font-serif text-xl font-bold">
               IndoBiz Japan
             </h4>
-            <p className="max-w-sm text-sm leading-7 text-primary-foreground/75">
+            <p className="max-w-sm text-base leading-8 text-primary-foreground/75">
               日本企業向けに、インド市場の短報、業界別ウォッチ、進出・採用の示唆を届ける v1 プロダクトです。
             </p>
           </div>
@@ -20,7 +20,7 @@ export function SiteFooter() {
             <h5 className="font-mono text-[11px] font-semibold uppercase tracking-[0.22em]">
               Categories
             </h5>
-            <ul className="space-y-2 text-sm text-primary-foreground/75">
+            <ul className="space-y-2 text-[13px] leading-6 text-primary-foreground/75">
               {CATEGORY_OPTIONS.map((category) => (
                 <li key={category}>
                   <Link
@@ -38,7 +38,7 @@ export function SiteFooter() {
             <h5 className="font-mono text-[11px] font-semibold uppercase tracking-[0.22em]">
               Navigation
             </h5>
-            <ul className="space-y-2 text-sm text-primary-foreground/75">
+            <ul className="space-y-2 text-[13px] leading-6 text-primary-foreground/75">
               <li>
                 <Link href="/pricing" className="transition-opacity hover:opacity-100">
                   無料会員登録

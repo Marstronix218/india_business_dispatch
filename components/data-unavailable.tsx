@@ -17,7 +17,7 @@ export function DataUnavailable({
       <main className="flex flex-1 items-center justify-center px-4 py-16 sm:px-6 lg:px-8">
         <div className="max-w-md space-y-3 text-center">
           <h1 className="text-2xl font-semibold text-foreground">{title}</h1>
-          <p className="text-sm leading-7 text-muted-foreground">{description}</p>
+          <p className="text-base leading-8 text-muted-foreground">{description}</p>
           {showHomeLink && (
             <Link
               href="/"

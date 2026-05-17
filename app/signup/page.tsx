@@ -58,7 +58,7 @@ function SignupForm() {
           <h1 className="font-serif text-2xl font-bold tracking-tight">
             新規登録
           </h1>
-          <p className="text-sm text-muted-foreground">
+          <p className="text-[13px] leading-6 text-muted-foreground">
             無料アカウントで全記事をお読みいただけます。
           </p>
         </div>
@@ -86,13 +86,13 @@ function SignupForm() {
               required
             />
           </div>
-          {error && <p className="text-sm text-destructive">{error}</p>}
-          {info && <p className="text-sm text-muted-foreground">{info}</p>}
+          {error && <p className="text-[13px] leading-6 text-destructive">{error}</p>}
+          {info && <p className="text-[13px] leading-6 text-muted-foreground">{info}</p>}
           <Button type="submit" className="w-full" disabled={submitting}>
             {submitting ? "登録中…" : "登録する"}
           </Button>
         </form>
-        <p className="mt-6 text-center text-sm text-muted-foreground">
+        <p className="mt-6 text-center text-[13px] leading-6 text-muted-foreground">
           既にアカウントをお持ちの方は{" "}
           <Link
             href={`/login${next !== "/" ? `?next=${encodeURIComponent(next)}` : ""}`}

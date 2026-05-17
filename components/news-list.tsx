@@ -161,7 +161,7 @@ export function NewsList() {
         )}
 
         {(activeCategory || industryFilterApplied || searchQuery) && (
-          <div className="mb-4 flex items-center gap-3 text-sm text-muted-foreground">
+          <div className="mb-4 flex items-center gap-3 text-xs text-muted-foreground">
             <span>{sortedArticles.length}件を表示中</span>
             <button
               type="button"
@@ -244,7 +244,7 @@ export function NewsList() {
             </div>
           </>
         ) : (
-          <div className="rounded-2xl border border-border bg-card p-8 text-sm text-muted-foreground">
+          <div className="rounded-2xl border border-border bg-card p-8 text-base leading-8 text-muted-foreground">
             条件に合う記事が見つかりませんでした。
           </div>
         )}

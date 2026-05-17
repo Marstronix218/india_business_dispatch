@@ -40,7 +40,20 @@ import {
   WORKFLOW_STATUS_LABELS,
   type Category,
   type NewsArticle,
+  type QualityVerdict,
 } from "@/lib/news-data"
+
+const QUALITY_VERDICT_LABELS: Record<QualityVerdict, string> = {
+  PASS: "品質OK",
+  REVISION: "要修正",
+  REJECT: "AI差戻",
+}
+
+const QUALITY_VERDICT_BADGE_CLASS: Record<QualityVerdict, string> = {
+  PASS: "border-emerald-500/50 text-emerald-700",
+  REVISION: "border-amber-500/60 text-amber-700",
+  REJECT: "border-red-500/60 text-red-700",
+}
 
 type StatusTab = "all" | "published" | "review"
 
@@ -406,6 +419,17 @@ export default function AdminPage() {
                           未合成
                         </Badge>
                       )}
+                      {article.qualityCheck && (
+                        <Badge
+                          variant="outline"
+                          className={QUALITY_VERDICT_BADGE_CLASS[article.qualityCheck.verdict]}
+                        >
+                          {QUALITY_VERDICT_LABELS[article.qualityCheck.verdict]}
+                          {article.qualityCheck.revisionCount > 0
+                            ? `(再生成${article.qualityCheck.revisionCount}回)`
+                            : ""}
+                        </Badge>
+                      )}
                       <Badge variant="outline">
                         {CATEGORY_LABELS[article.category]}
                       </Badge>
@@ -477,6 +501,19 @@ export default function AdminPage() {
                         ))}
                       </ul>
                     )}
+
+                    {article.qualityCheck &&
+                      article.qualityCheck.verdict !== "PASS" &&
+                      article.qualityCheck.notes && (
+                        <details className="rounded-xl border border-amber-500/30 bg-amber-500/5 px-3 py-2 text-xs text-amber-900">
+                          <summary className="cursor-pointer font-medium">
+                            AI品質チェックの指摘
+                          </summary>
+                          <pre className="mt-2 whitespace-pre-wrap font-sans text-xs text-amber-900/90">
+                            {article.qualityCheck.notes}
+                          </pre>
+                        </details>
+                      )}
                   </div>
 
                   <div className="flex shrink-0 flex-wrap items-center gap-2">

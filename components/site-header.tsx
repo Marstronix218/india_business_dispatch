@@ -3,7 +3,20 @@ import Image from "next/image"
 import { Button } from "@/components/ui/button"
 import { HeaderAuthControls } from "@/components/header-auth-controls"
 
-const WEEKDAYS = ["日", "月", "火", "水", "木", "金", "土"]
+function formatTokyoDate(date: Date) {
+  const parts = new Intl.DateTimeFormat("ja-JP", {
+    timeZone: "Asia/Tokyo",
+    year: "numeric",
+    month: "numeric",
+    day: "numeric",
+    weekday: "short",
+  }).formatToParts(date)
+
+  const value = (type: Intl.DateTimeFormatPartTypes) =>
+    parts.find((part) => part.type === type)?.value ?? ""
+
+  return `${value("year")}年${value("month")}月${value("day")}日 (${value("weekday")})`
+}
 
 function BrandWordmark({ compact = false }: { compact?: boolean }) {
   return (
@@ -21,10 +34,7 @@ function BrandWordmark({ compact = false }: { compact?: boolean }) {
 }
 
 export function SiteHeader() {
-  const today = new Date()
-  const dateStr = `${today.getFullYear()}年${
-    today.getMonth() + 1
-  }月${today.getDate()}日 (${WEEKDAYS[today.getDay()]})`
+  const dateStr = formatTokyoDate(new Date())
 
   return (
     <header className="border-b border-border bg-background">
@@ -37,7 +47,9 @@ export function SiteHeader() {
             <span className="hidden sm:inline">
               日本企業向けインド市場インテリジェンス
             </span>
-            <time className="font-mono">{dateStr}</time>
+            <time className="font-mono" suppressHydrationWarning>
+              {dateStr}
+            </time>
           </div>
         </div>
       </div>

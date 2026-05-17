@@ -16,7 +16,7 @@ export default function PricingPage() {
           <h1 className="font-serif text-3xl font-bold tracking-tight text-foreground">
             価格
           </h1>
-          <p className="max-w-3xl text-sm leading-7 text-muted-foreground">
+          <p className="max-w-3xl text-base leading-8 text-muted-foreground">
             法人パイロットの料金イメージと、無料会員登録の入口をこのページにまとめています。
           </p>
         </div>

@@ -108,15 +108,15 @@ export function ArticleView({ id }: { id: string }) {
                         key={key}
                         className="rounded-2xl border border-border bg-secondary/30 p-4"
                       >
-                        <p className="text-sm font-medium text-foreground">
+                        <p className="text-xs font-medium text-foreground">
                           {metric.label}
                         </p>
                         <p className="mt-2 text-xl font-semibold text-foreground">
                           {metric.value}
                         </p>
-                        <p className="text-sm text-muted-foreground">{metric.unit}</p>
+                        <p className="text-xs text-muted-foreground">{metric.unit}</p>
                         <p
-                          className={`mt-2 text-sm font-medium ${
+                          className={`mt-2 text-xs font-medium ${
                             metric.change.startsWith("-")
                               ? "text-rose-600"
                               : "text-emerald-700"
@@ -153,7 +153,7 @@ export function ArticleView({ id }: { id: string }) {
                 {article.implications.map((implication) => (
                   <li
                     key={implication}
-                    className="rounded-2xl border border-border bg-secondary/30 px-4 py-3 text-sm leading-7 text-foreground"
+                    className="rounded-2xl border border-border bg-secondary/30 px-4 py-3 text-base leading-8 text-foreground"
                   >
                     {implication}
                   </li>
@@ -170,7 +170,7 @@ export function ArticleView({ id }: { id: string }) {
                   {allSources.map((src, idx) => (
                     <li
                       key={`${idx}-${src.originalUrl}`}
-                      className="text-sm leading-7 text-foreground"
+                      className="text-[13px] leading-6 text-foreground"
                     >
                       {src.originalUrl ? (
                         <a

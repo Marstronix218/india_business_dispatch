@@ -46,7 +46,7 @@ function LoginForm() {
           <h1 className="font-serif text-2xl font-bold tracking-tight">
             ログイン
           </h1>
-          <p className="text-sm text-muted-foreground">
+          <p className="text-[13px] leading-6 text-muted-foreground">
             記事を読むには、ログインしてください。
           </p>
         </div>
@@ -73,12 +73,12 @@ function LoginForm() {
               required
             />
           </div>
-          {error && <p className="text-sm text-destructive">{error}</p>}
+          {error && <p className="text-[13px] leading-6 text-destructive">{error}</p>}
           <Button type="submit" className="w-full" disabled={submitting}>
             {submitting ? "確認中…" : "ログイン"}
           </Button>
         </form>
-        <p className="mt-6 text-center text-sm text-muted-foreground">
+        <p className="mt-6 text-center text-[13px] leading-6 text-muted-foreground">
           アカウントをお持ちでない方は{" "}
           <Link
             href={`/signup${next !== "/" ? `?next=${encodeURIComponent(next)}` : ""}`}

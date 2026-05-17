@@ -1,7 +1,20 @@
 import OpenAI from "openai"
-import { buildSynthesisPrompt } from "./prompt"
+import { SYNTHESIS_SYSTEM_PROMPT, buildSynthesisPrompt } from "./prompt"
+import {
+  buildQualityCheckPrompt,
+  buildRevisionPrompt,
+} from "./quality-prompts"
 import { parseSynthesisOutput } from "./parse"
-import { LLMError, type LLMClient, type SynthesisInput, type SynthesisOutput } from "./types"
+import { parseQualityCheckOutput } from "./quality-parse"
+import {
+  LLMError,
+  type LLMClient,
+  type QualityCheckInput,
+  type QualityCheckOutput,
+  type ReviseSynthesisInput,
+  type SynthesisInput,
+  type SynthesisOutput,
+} from "./types"
 import { isRetryableLLMError, sleep } from "./retry"
 
 export class OpenAIClient implements LLMClient {
@@ -25,7 +38,28 @@ export class OpenAIClient implements LLMClient {
 
   async synthesize(input: SynthesisInput): Promise<SynthesisOutput> {
     const { system, user } = buildSynthesisPrompt(input)
+    const raw = await this.callChat(system, user, "synthesize")
+    return parseSynthesisOutput(raw, input)
+  }
 
+  async checkQuality(input: QualityCheckInput): Promise<QualityCheckOutput> {
+    const { system, user } = buildQualityCheckPrompt(input)
+    const raw = await this.callChat(system, user, "checkQuality")
+    return parseQualityCheckOutput(raw)
+  }
+
+  async reviseSynthesis(input: ReviseSynthesisInput): Promise<SynthesisOutput> {
+    const { user, systemAddendum } = buildRevisionPrompt(input)
+    const system = SYNTHESIS_SYSTEM_PROMPT + systemAddendum
+    const raw = await this.callChat(system, user, "reviseSynthesis")
+    return parseSynthesisOutput(raw, {
+      cluster: input.cluster,
+      categoryHint: input.categoryHint,
+      industryHints: input.industryHints,
+    })
+  }
+
+  private async callChat(system: string, user: string, label: string): Promise<string> {
     let lastError: unknown
     for (let attempt = 0; attempt <= this.maxRetries; attempt++) {
       try {
@@ -50,7 +84,7 @@ export class OpenAIClient implements LLMClient {
           throw new LLMError("OpenAI応答が空です")
         }
 
-        return parseSynthesisOutput(content, input)
+        return content
       } catch (error) {
         lastError = error
         const isParseError =
@@ -62,20 +96,20 @@ export class OpenAIClient implements LLMClient {
         if (attempt < this.maxRetries && retryable) {
           const delayMs = Math.min(1000 * Math.pow(2, attempt), 8000) + Math.floor(Math.random() * 500)
           console.warn(
-            `[openai] retryable error on attempt ${attempt + 1}/${this.maxRetries + 1}, retrying in ${delayMs}ms: ${error instanceof Error ? error.message : String(error)}`,
+            `[openai:${label}] retryable error on attempt ${attempt + 1}/${this.maxRetries + 1}, retrying in ${delayMs}ms: ${error instanceof Error ? error.message : String(error)}`,
           )
           await sleep(delayMs)
           continue
         }
         if (error instanceof LLMError) throw error
         throw new LLMError(
-          `OpenAI呼び出しに失敗: ${error instanceof Error ? error.message : String(error)}`,
+          `OpenAI呼び出しに失敗 (${label}): ${error instanceof Error ? error.message : String(error)}`,
           error,
         )
       }
     }
     throw new LLMError(
-      `OpenAI呼び出しに失敗 (リトライ上限到達): ${lastError instanceof Error ? lastError.message : String(lastError)}`,
+      `OpenAI呼び出しに失敗 (${label}, リトライ上限到達): ${lastError instanceof Error ? lastError.message : String(lastError)}`,
       lastError,
     )
   }

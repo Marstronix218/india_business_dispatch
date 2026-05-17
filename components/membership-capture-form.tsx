@@ -44,7 +44,7 @@ export function MembershipCaptureForm() {
     <form onSubmit={handleSubmit} className="space-y-4">
       <div className="space-y-1">
         <h3 className="text-lg font-semibold text-foreground">無料会員登録</h3>
-        <p className="text-sm leading-relaxed text-muted-foreground">
+        <p className="text-base leading-8 text-muted-foreground">
           日次または週次のダイジェストを受け取り、法人向けパイロット情報も先行で確認できます。
         </p>
       </div>

@@ -33,7 +33,7 @@ const rows: DisclosureRow[] = [
       <>
         050-3629-1977
         <br />
-        <span className="text-xs text-muted-foreground">
+        <span className="text-xs leading-6 text-muted-foreground">
           ※受付時間：平日10:00–18:00（土日祝・年末年始を除く）。お問い合わせは原則メールにて承ります。
         </span>
       </>
@@ -60,7 +60,7 @@ const rows: DisclosureRow[] = [
       <>
         個人向け有料会員プラン：月額 1,000円（税込）
         <br />
-        <span className="text-xs text-muted-foreground">
+        <span className="text-xs leading-6 text-muted-foreground">
           価格は申込画面および Stripe Checkout 画面に明示されます。
         </span>
         <br />
@@ -93,7 +93,7 @@ const rows: DisclosureRow[] = [
       <>
         クレジットカード決済（Stripe, Inc. を通じた処理）
         <br />
-        <span className="text-xs text-muted-foreground">
+        <span className="text-xs leading-6 text-muted-foreground">
           対応ブランド：Visa / Mastercard / American Express / JCB / Diners Club / Discover
         </span>
       </>
@@ -167,7 +167,7 @@ export default function TokushohoPage() {
           <h1 className="font-serif text-3xl font-bold tracking-tight text-foreground">
             特定商取引法に基づく表記
           </h1>
-          <p className="text-sm text-muted-foreground">
+          <p className="text-xs text-muted-foreground">
             最終更新日：2026年5月17日
           </p>
         </div>
@@ -179,10 +179,10 @@ export default function TokushohoPage() {
                 key={row.label}
                 className="grid gap-2 py-5 first:pt-0 last:pb-0 md:grid-cols-[200px_1fr] md:gap-6"
               >
-                <dt className="text-sm font-semibold text-foreground">
+                <dt className="text-[13px] font-semibold leading-6 text-foreground">
                   {row.label}
                 </dt>
-                <dd className="text-sm leading-7 text-muted-foreground">
+                <dd className="text-base leading-8 text-muted-foreground">
                   {row.content}
                 </dd>
               </div>
@@ -190,7 +190,7 @@ export default function TokushohoPage() {
           </dl>
         </div>
 
-        <p className="mt-6 text-xs leading-6 text-muted-foreground">
+        <p className="mt-6 text-[13px] leading-6 text-muted-foreground">
           本ページに記載のない事項については、
           <a
             href="/terms"

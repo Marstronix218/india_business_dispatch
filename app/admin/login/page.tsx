@@ -43,7 +43,7 @@ export default function AdminLoginPage() {
           <h1 className="font-serif text-2xl font-bold tracking-tight">
             管理画面ログイン
           </h1>
-          <p className="text-sm text-muted-foreground">
+          <p className="text-[13px] leading-6 text-muted-foreground">
             管理者キーを入力してください。
           </p>
         </div>
@@ -60,7 +60,7 @@ export default function AdminLoginPage() {
               required
             />
           </div>
-          {error && <p className="text-sm text-destructive">{error}</p>}
+          {error && <p className="text-[13px] leading-6 text-destructive">{error}</p>}
           <Button type="submit" className="w-full" disabled={submitting}>
             {submitting ? "確認中…" : "ログイン"}
           </Button>

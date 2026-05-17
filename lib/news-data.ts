@@ -30,6 +30,14 @@ export type Topic =
 export type ContentType = "news" | "column" | "interview"
 export type Visibility = "public" | "member"
 export type WorkflowStatus = "published" | "review" | "failed"
+export type QualityVerdict = "PASS" | "REVISION" | "REJECT"
+
+export interface QualityCheckMeta {
+  verdict: QualityVerdict
+  notes?: string
+  revisionCount: number
+  checkedAt?: string
+}
 
 export interface MarketMetric {
   label: string
@@ -79,6 +87,7 @@ export interface NewsArticle {
   provenance?: SourceProvenance
   sources?: SourceProvenance[]
   isSynthesized?: boolean
+  qualityCheck?: QualityCheckMeta
 }
 
 export function getAllSources(article: NewsArticle): SourceProvenance[] {

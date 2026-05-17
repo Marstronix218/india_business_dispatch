@@ -77,7 +77,7 @@ export function ArticleTeaser({ article }: { article: NewsArticle }) {
             <h2 className="mt-3 font-serif text-xl font-bold text-foreground">
               続きを読むには登録が必要です
             </h2>
-            <p className="mt-2 text-sm text-muted-foreground">
+            <p className="mt-2 text-base leading-8 text-muted-foreground">
               無料アカウントでフルテキスト・示唆・関連記事をお読みいただけます。
             </p>
             <div className="mt-5 flex flex-wrap justify-center gap-2">

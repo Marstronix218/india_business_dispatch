@@ -15,13 +15,13 @@ export function PricingSection() {
     <section className="space-y-8">
       <div className="flex flex-col gap-3 md:flex-row md:items-end md:justify-between">
         <div className="space-y-2">
-          <p className="text-sm font-medium uppercase tracking-[0.18em] text-accent">
+          <p className="text-xs font-medium uppercase tracking-[0.18em] text-accent">
             Pricing
           </p>
           <h2 className="text-3xl font-semibold tracking-tight text-foreground">
             法人パイロットと無料会員の導線を分けた料金設計
           </h2>
-          <p className="max-w-3xl text-sm leading-7 text-muted-foreground">
+          <p className="max-w-3xl text-base leading-8 text-muted-foreground">
             最初の一か月は無料、最低契約期間は6か月を前提にしています。法人プランは資料請求を主導線にし、無料会員は情報収集フェーズの入口として位置付けています。
           </p>
         </div>
@@ -56,14 +56,14 @@ export function PricingSection() {
               </div>
             </CardHeader>
             <CardContent className="space-y-4">
-              <p className="text-sm leading-6 text-muted-foreground">
+              <p className="text-[13px] leading-6 text-muted-foreground">
                 {plan.summary}
               </p>
               <ul className="space-y-2">
                 {plan.features.map((feature) => (
                   <li
                     key={feature}
-                    className="flex items-start gap-2 text-sm text-foreground"
+                    className="flex items-start gap-2 text-[13px] leading-6 text-foreground"
                   >
                     <Check className="mt-0.5 size-4 text-accent" />
                     <span>{feature}</span>

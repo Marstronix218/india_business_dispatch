@@ -100,7 +100,7 @@ export function NewsCardHero({
         <h2 className="mt-2 text-balance font-serif text-2xl font-bold leading-[1.25] text-white md:text-[28px]">
           {article.title}
         </h2>
-        <p className="mt-2 line-clamp-2 max-w-prose text-sm text-white/80">
+        <p className="mt-2 line-clamp-2 max-w-prose text-base leading-7 text-white/80">
           {article.summary}
         </p>
       </div>
@@ -182,7 +182,7 @@ export function NewsCardTile({ article }: { article: NewsArticle }) {
         <h3 className="mt-1.5 line-clamp-3 font-serif text-[17px] font-bold leading-snug text-foreground transition-colors group-hover:text-accent">
           {article.title}
         </h3>
-        <p className="mt-1.5 line-clamp-2 text-xs leading-relaxed text-muted-foreground">
+        <p className="mt-1.5 line-clamp-2 text-[13px] leading-6 text-muted-foreground">
           {article.summary}
         </p>
       </div>
@@ -233,7 +233,7 @@ export function NewsCardFeature({ article }: { article: NewsArticle }) {
         <h3 className="mt-2 text-balance font-serif text-2xl font-bold leading-snug transition-colors group-hover:text-accent">
           {article.title}
         </h3>
-        <p className="mt-2 line-clamp-3 text-sm leading-relaxed text-muted-foreground">
+        <p className="mt-2 line-clamp-3 text-base leading-7 text-muted-foreground">
           {article.summary}
         </p>
       </div>

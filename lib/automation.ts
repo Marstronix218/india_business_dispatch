@@ -3,7 +3,9 @@ import {
   INDUSTRY_LABELS,
   type IndustryTag,
   type NewsArticle,
+  type QualityCheckMeta,
   type SourceProvenance,
+  type WorkflowStatus,
   normalizeLegacyCategory,
 } from "@/lib/news-data"
 import { cleanText, ensureMinimumSummaryLength } from "@/lib/summary-utils"
@@ -13,6 +15,7 @@ import {
   LLMError,
   getLLMClient,
   type LLMClient,
+  type QualityCheckOutput,
   type SynthesisOutput,
   type SynthesisSource,
 } from "@/lib/llm"
@@ -267,10 +270,139 @@ function readJapaneseBusinessRelevanceMin(): number {
   return Math.max(0, Math.min(3, Math.round(raw)))
 }
 
+function isQualityCheckEnabled(): boolean {
+  return process.env.QUALITY_CHECK_ENABLED === "1"
+}
+
+function readQualityMaxRevisions(): number {
+  const raw = Number(process.env.QUALITY_MAX_REVISIONS)
+  if (!Number.isFinite(raw)) return 2
+  return Math.max(0, Math.min(5, Math.round(raw)))
+}
+
+interface QualityLoopResult {
+  output: SynthesisOutput
+  qualityCheck: QualityCheckMeta
+  forceReview: boolean
+}
+
+function joinIssueNotes(parts: (string | undefined | null)[]): string | undefined {
+  const cleaned = parts.map((p) => (p ?? "").trim()).filter(Boolean)
+  return cleaned.length > 0 ? cleaned.join("\n") : undefined
+}
+
+async function runQualityLoop(
+  llm: LLMClient,
+  initialOutput: SynthesisOutput,
+  synthInput: SynthesisSource[],
+  primary: RawSourceArticle,
+): Promise<QualityLoopResult> {
+  const maxRevisions = readQualityMaxRevisions()
+  let currentOutput = initialOutput
+  let attempts = 0
+  let lastIssuesText: string | undefined
+
+  while (true) {
+    let qc: QualityCheckOutput
+    try {
+      qc = await llm.checkQuality({ output: currentOutput, cluster: synthInput })
+    } catch (error) {
+      const msg = error instanceof Error ? error.message : String(error)
+      console.warn(
+        `[automation:quality] checkQuality失敗 (title="${primary.title}"): ${msg}`,
+      )
+      return {
+        output: currentOutput,
+        qualityCheck: {
+          verdict: "REVISION",
+          notes: joinIssueNotes([
+            lastIssuesText,
+            `品質チェック自体が失敗しました: ${msg}`,
+          ]),
+          revisionCount: attempts,
+          checkedAt: new Date().toISOString(),
+        },
+        forceReview: true,
+      }
+    }
+
+    lastIssuesText = qc.issues.length > 0 ? qc.issues.join("\n") : undefined
+
+    if (qc.verdict === "PASS") {
+      return {
+        output: currentOutput,
+        qualityCheck: {
+          verdict: "PASS",
+          notes: lastIssuesText,
+          revisionCount: attempts,
+          checkedAt: new Date().toISOString(),
+        },
+        forceReview: false,
+      }
+    }
+
+    if (qc.verdict === "REJECT") {
+      return {
+        output: currentOutput,
+        qualityCheck: {
+          verdict: "REJECT",
+          notes: lastIssuesText,
+          revisionCount: attempts,
+          checkedAt: new Date().toISOString(),
+        },
+        forceReview: true,
+      }
+    }
+
+    if (attempts >= maxRevisions || !qc.revisionInstructions) {
+      const exhaustedNote = attempts >= maxRevisions
+        ? `(修正回数上限 ${maxRevisions} 到達)`
+        : "(修正指示が空のため再生成不可)"
+      return {
+        output: currentOutput,
+        qualityCheck: {
+          verdict: "REVISION",
+          notes: joinIssueNotes([lastIssuesText, exhaustedNote]),
+          revisionCount: attempts,
+          checkedAt: new Date().toISOString(),
+        },
+        forceReview: true,
+      }
+    }
+
+    try {
+      currentOutput = await llm.reviseSynthesis({
+        cluster: synthInput,
+        previousOutput: currentOutput,
+        revisionInstructions: qc.revisionInstructions,
+        categoryHint: primary.legacyCategory,
+        industryHints: primary.industryHints,
+      })
+      attempts += 1
+    } catch (error) {
+      const msg = error instanceof Error ? error.message : String(error)
+      console.warn(
+        `[automation:quality] reviseSynthesis失敗 (title="${primary.title}"): ${msg}`,
+      )
+      return {
+        output: currentOutput,
+        qualityCheck: {
+          verdict: "REVISION",
+          notes: joinIssueNotes([lastIssuesText, `再生成失敗: ${msg}`]),
+          revisionCount: attempts,
+          checkedAt: new Date().toISOString(),
+        },
+        forceReview: true,
+      }
+    }
+  }
+}
+
 function buildSynthesizedDraft(
   cluster: RawSourceArticle[],
   primary: RawSourceArticle,
   output: SynthesisOutput,
+  opts?: { qualityCheck?: QualityCheckMeta; forceReview?: boolean },
 ): PipelineDraft {
   const category = normalizeLegacyCategory(output.category || primary.legacyCategory || "economy")
   const llmTags = normalizeTagList(output.industryTags)
@@ -280,8 +412,9 @@ function buildSynthesizedDraft(
     originalUrl: ref.url,
   }))
 
-  const workflowStatus =
+  const baseStatus: WorkflowStatus =
     category === "regulation" && cluster.length === 1 ? "review" : "published"
+  const workflowStatus: WorkflowStatus = opts?.forceReview ? "review" : baseStatus
 
   return {
     dedupeKey: buildDedupeKey(primary.title),
@@ -301,6 +434,7 @@ function buildSynthesizedDraft(
     workflowStatus,
     originConnectorIds: cluster.map((item) => item.connectorId),
     isSynthesized: true,
+    qualityCheck: opts?.qualityCheck,
   }
 }
 
@@ -360,13 +494,23 @@ async function buildDraft(
       )
     }
 
+    let finalOutput = output
+    let qualityCheck: QualityCheckMeta | undefined
+    let forceReview = false
+    if (isQualityCheckEnabled()) {
+      const qcResult = await runQualityLoop(llm, output, synthInput, primary)
+      finalOutput = qcResult.output
+      qualityCheck = qcResult.qualityCheck
+      forceReview = qcResult.forceReview
+    }
+
     primary.imageUrl = await tryGenerateImage(
       imageClient,
-      output.imagePrompt,
+      finalOutput.imagePrompt,
       primary.title,
     ) ?? undefined
 
-    return buildSynthesizedDraft(cluster, primary, output)
+    return buildSynthesizedDraft(cluster, primary, finalOutput, { qualityCheck, forceReview })
   } catch (error) {
     const msg = error instanceof LLMError
       ? error.message

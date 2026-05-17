@@ -107,7 +107,7 @@ export function LeadCaptureForm({
     <form onSubmit={handleSubmit} className="space-y-4">
       <div className="space-y-1">
         <h3 className="text-lg font-semibold text-foreground">{title}</h3>
-        <p className="text-sm leading-relaxed text-muted-foreground">
+        <p className="text-base leading-8 text-muted-foreground">
           {description}
         </p>
       </div>

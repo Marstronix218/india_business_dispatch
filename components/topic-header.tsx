@@ -26,7 +26,7 @@ export function TopicHeader({
           {count}記事
         </span>
       </div>
-      <p className="mb-3 text-sm leading-relaxed text-muted-foreground">
+      <p className="mb-3 text-base leading-7 text-muted-foreground">
         {section.kicker}
       </p>
       <div className="topic-rule" />

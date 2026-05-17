@@ -26,7 +26,7 @@ export default async function ContactPage({
           <h1 className="font-serif text-3xl font-bold tracking-tight text-foreground">
             お問い合わせ
           </h1>
-          <p className="max-w-3xl text-sm leading-7 text-muted-foreground">
+          <p className="max-w-3xl text-base leading-8 text-muted-foreground">
             インド進出の検討、人材採用、既進出後の運用課題まで、相談内容をこのページで受け付けます。
           </p>
         </div>
